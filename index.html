@@ -144,7 +144,14 @@ select.cur{flex:0 0 auto;padding:7px 6px;font-size:15px;font-weight:600}
 .sw input:checked+i::after,.sw.on i::after{transform:translateX(20px)}
 .sw input:focus-visible+i{outline:2px solid var(--gold);outline-offset:2px}
 
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(10,20,64,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(10,20,64,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.08);padding:10px 16px calc(10px + env(safe-area-inset-bottom));transition:transform .25s ease,opacity .25s ease}
+body.typing .bar{transform:translateY(110%);opacity:0;pointer-events:none}
+.tgmb .wrap{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+.tgmb .toast{bottom:calc(24px + env(safe-area-inset-bottom))}
+.wrap .err{margin:10px 0 0}
+.hero-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.hero-btns .howto{margin-top:0}
+input,select{scroll-margin:120px 0}
 .bar>div{max-width:480px;margin:0 auto}
 .err{color:#fff;background:rgba(255,61,90,.92);border-radius:12px;padding:8px 12px;font-size:14px;margin:0 0 8px;text-align:center}
 
@@ -217,9 +224,11 @@ select.cur{flex:0 0 auto;padding:7px 6px;font-size:15px;font-weight:600}
 .row .val{margin-left:auto;padding:14px 0;font-weight:600;text-align:right}
 .row .val.ph{color:#a3a0bf;font-weight:400}
 .cal-ic{font-size:18px}
-.sheet-back{position:fixed;inset:0;z-index:45;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,8,30,.6);animation:fade .2s ease-out}
+.sheet-back{position:fixed;inset:0;z-index:45;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,8,30,.6)}
+.sheet-back.enter{animation:fade .2s ease-out}
 @keyframes fade{from{opacity:0}}
-.sheet{width:100%;max-width:480px;max-height:92vh;overflow:auto;background:#fff;color:var(--text);border-radius:26px 26px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.35);animation:sheetUp .32s cubic-bezier(.2,.9,.3,1.15)}
+.sheet{width:100%;max-width:480px;max-height:92vh;overflow:auto;background:#fff;color:var(--text);border-radius:26px 26px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.35)}
+.sheet-back.enter .sheet{animation:sheetUp .32s cubic-bezier(.2,.9,.3,1.15)}
 @keyframes sheetUp{from{transform:translateY(100%)}}
 .grab{display:block;width:40px;height:5px;border-radius:3px;background:#dcd9ea;margin:0 auto 12px}
 .sheet h2{font-size:20px;margin:0 0 12px;text-align:center}
@@ -234,6 +243,12 @@ select.cur{flex:0 0 auto;padding:7px 6px;font-size:15px;font-weight:600}
 .cal-nav{width:40px;height:40px;border-radius:50%;background:var(--field);color:var(--violet);font-size:26px;line-height:38px;text-align:center}
 .cal-nav:disabled{opacity:.35;cursor:default}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-days{touch-action:pan-y}
+.day-empty{aspect-ratio:1;max-height:52px}
+.from-r{animation:calR .24s ease-out}
+.from-l{animation:calL .24s ease-out}
+@keyframes calR{from{opacity:.2;transform:translateX(18px)}}
+@keyframes calL{from{opacity:.2;transform:translateX(-18px)}}
 .wd{padding:4px 0 6px;text-align:center;font-size:12px;font-weight:700;color:var(--hint)}
 .wd.we{color:var(--red)}
 .day{position:relative;aspect-ratio:1;max-height:52px;border-radius:50%;display:grid;place-items:center;text-align:center;font-size:16px;font-weight:600;transition:transform .12s,background .2s}
@@ -274,25 +289,42 @@ const tg = window.Telegram && window.Telegram.WebApp;
 const inTG = !!(tg && tg.platform && tg.platform !== 'unknown');
 const ver = v => { try { return inTG && tg.isVersionAtLeast(v); } catch (e) { return false; } };
 const user = (inTG && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;   // не проверено сервером: только для имени и языка
+const MB = inTG && tg.MainButton ? tg.MainButton : null;
 const qs = new URLSearchParams(location.search);
 const hs = new URLSearchParams(location.hash.replace(/^#/, ''));
-const rawLang = (qs.get('lang') || (user && user.language_code) || navigator.language || 'ru').toLowerCase();
-const lang = /^(ru|be|kk|uz|ky|tg|hy|az)/.test(rawLang) ? 'ru' : 'en';
+/* Язык. Приложение для русскоязычных, поэтому русский включается, если на него указывает хоть один признак:
+   язык Telegram, любой из языков браузера или часовой пояс. Английский — только если признаков нет совсем.
+   Выбор вручную (кнопка RU/EN) запоминается на устройстве и важнее автоопределения. */
+const RU_LANGS = /^(ru|be|kk|uz|ky|tg|hy|az)\b/;
+const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } })();
+const langSignals = [user && user.language_code].concat(navigator.languages || [], navigator.language || [])
+  .filter(Boolean).map(s => String(s).toLowerCase());
+const RU_TZ = /^(Europe\/(Moscow|Minsk|Kaliningrad|Samara|Volgograd|Saratov|Ulyanovsk|Astrakhan|Kirov|Simferopol)|Asia\/(Yekaterinburg|Omsk|Novosibirsk|Barnaul|Tomsk|Novokuznetsk|Krasnoyarsk|Irkutsk|Chita|Yakutsk|Khandyga|Vladivostok|Ust-Nera|Magadan|Sakhalin|Srednekolymsk|Kamchatka|Anadyr|Almaty|Qostanay|Aqtobe|Aqtau|Atyrau|Oral|Qyzylorda|Tashkent|Samarkand|Bishkek|Dushanbe|Yerevan|Baku))$/;
+function pickLang() {
+  const forced = (qs.get('lang') || '').toLowerCase();
+  if (forced === 'ru' || forced === 'en') return forced;
+  try { const saved = localStorage.getItem('santa_lang'); if (saved === 'ru' || saved === 'en') return saved; } catch (e) {}
+  if (langSignals.some(s => RU_LANGS.test(s)) || RU_TZ.test(tz)) return 'ru';
+  return langSignals.length ? 'en' : 'ru';
+}
+let lang = pickLang();
 document.documentElement.lang = lang;
 const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 /* валюты бюджета: код, знак, пример суммы для подсказки */
 const CURRENCIES = [['RUB', '₽', '1500'], ['BYN', 'Br', '50'], ['KZT', '₸', '10000'], ['USD', '$', '20'], ['EUR', '€', '20']];
 const curOf = c => CURRENCIES.find(x => x[0] === c) || null;
-const locs = (rawLang + ' ' + (navigator.language || '')).toLowerCase();
-const DEFAULT_CUR = /\bbe\b|-by\b/.test(locs) ? 'BYN' : /\bkk\b|-kz\b/.test(locs) ? 'KZT' : lang === 'ru' ? 'RUB' : 'EUR';
+const locs = langSignals.join(' ');
+const DEFAULT_CUR = tz === 'Europe/Minsk' || /\bbe\b|-by\b/.test(locs) ? 'BYN'
+  : /^Asia\/(Almaty|Qostanay|Aqtobe|Aqtau|Atyrau|Oral|Qyzylorda)$/.test(tz) || /\bkk\b|-kz\b/.test(locs) ? 'KZT'
+  : lang === 'ru' ? 'RUB' : 'EUR';
 
 /* ───────────── тексты ───────────── */
 const I = {
 ru: {
   app: 'Тайный Санта',
   lead: 'Соберите компанию, проведите жеребьёвку и отправьте каждому личную ссылку с его парой.',
-  howto: 'Как играть?',
+  howto: 'Как играть?', langBtn: 'EN', langAria: 'Switch to English',
   fTitle: 'Название', budget: 'Бюджет', phBudget: n => `до ${n}`, cur: 'Валюта', date: 'Дата обмена', org: 'Организатор',
   calPick: 'Выбрать', calTitle: 'Когда дарим подарки?', calNone: 'Без даты', calDone: 'Готово', calPrev: 'Предыдущий месяц', calNext: 'Следующий месяц',
   months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
@@ -353,7 +385,7 @@ ru: {
 en: {
   app: 'Secret Santa',
   lead: 'Gather your group, run the draw and send everyone a personal link with their match.',
-  howto: 'How to play?',
+  howto: 'How to play?', langBtn: 'RU', langAria: 'Переключить на русский',
   fTitle: 'Name', budget: 'Budget', phBudget: n => `up to ${n}`, cur: 'Currency', date: 'Gift swap date', org: 'Organizer',
   calPick: 'Choose', calTitle: 'When do we swap gifts?', calNone: 'No date', calDone: 'Done', calPrev: 'Previous month', calNext: 'Next month',
   months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
@@ -412,7 +444,12 @@ en: {
   ]
 }
 };
-const t = I[lang];
+let t = I[lang];
+function setLang(l) {
+  lang = l; t = I[l]; document.documentElement.lang = l;
+  try { localStorage.setItem('santa_lang', l); } catch (e) {}
+  render();
+}
 
 /* ───────────── утилиты ───────────── */
 const $ = (s, r = document) => r.querySelector(s);
@@ -805,7 +842,7 @@ function viewSetup() {
       <div>
         <h1 class="hand">${esc(t.app)}</h1>
         <p>${esc(t.lead)}</p>
-        <button class="howto" data-act="help">❓ ${esc(t.howto)}</button>
+        <div class="hero-btns"><button class="howto" data-act="help">❓ ${esc(t.howto)}</button>${langBtn()}</div>
       </div>
     </div>
     ${mineRows ? `<div class="cap"><span>${esc(t.mineCap)}</span></div><div class="sect">${mineRows}</div>` : ''}
@@ -823,6 +860,7 @@ function viewSetup() {
       <div class="row"><input id="newName" maxlength="400" placeholder="${esc(t.phName)}" autocomplete="off" enterkeyhint="done"><button class="pill mint" data-act="add">${esc(t.add)}</button></div>
     </div>
     <p class="note">${n < 3 ? esc(t.needMore) + ' ' : ''}${esc(t.meNote)}</p>
+    ${s.err ? `<p class="err" role="alert">${esc(s.err)}</p>` : ''}
 
     <div class="cap"><span>${esc(t.rules)}</span></div>
     <div class="sect">
@@ -838,10 +876,18 @@ function viewSetup() {
     <p class="note">${esc(t.exNote)}</p>` : ''}
     <p class="credit">${esc(t.credit)}</p>
   </div>
-  <div class="bar"><div>
-    ${s.err ? `<p class="err" role="alert">${esc(s.err)}</p>` : ''}
-    <button class="btn shine" data-act="draw">${esc(t.draw)}</button>
-  </div></div>`;
+  ${MB ? '' : `<div class="bar"><div><button class="btn shine" data-act="draw">${esc(t.draw)}</button></div></div>`}`;
+}
+const langBtn = () => `<button class="howto" data-act="switchLang" aria-label="${esc(t.langAria)}">🌐 ${esc(t.langBtn)}</button>`;
+/* В Telegram главная кнопка — родная (MainButton): её двигает сам Telegram вместе с клавиатурой,
+   а страница заканчивается над ней, поэтому поля ввода она не перекрывает. */
+function syncMainButton() {
+  if (!MB) return;
+  try {
+    if (state.screen === 'setup' && state.intro == null && !state.cal) {
+      MB.setParams({ text: t.draw, color: '#ff3d5a', text_color: '#ffffff', is_active: true, is_visible: true, has_shine_effect: true });
+    } else MB.hide();
+  } catch (e) {}
 }
 
 function viewResult() {
@@ -864,7 +910,7 @@ function viewResult() {
       <div>
         <h1 class="hand">${esc(t.resTitle)}</h1>
         <p>${esc(t.resLead)}</p>
-        <button class="howto" data-act="help">❓ ${esc(t.howto)}</button>
+        <div class="hero-btns"><button class="howto" data-act="help">❓ ${esc(t.howto)}</button>${langBtn()}</div>
       </div>
     </div>
     <div class="prog">
@@ -910,6 +956,7 @@ function viewReveal() {
     <div class="stage-foot"><span class="reveal-santa">${santa(96)}</span>${pile(3)}</div>
     ${rows.length ? `<div class="sect" style="margin-top:14px">${rows.map(r => `<div class="row kv"><span class="lbl">${esc(r[0])}</span><span class="val">${r[0] === t.codeLbl ? `<span class="code">${esc(r[1])}</span>` : esc(r[1])}</span></div>`).join('')}</div>` : ''}
     <p class="secret">${esc(t.secretNote)}</p>
+    <div class="c" style="margin-top:12px">${langBtn()}</div>
     <div class="cta${v.seen ? ' on' : ''}"><button class="btn ghost" data-act="own">🎅 ${esc(t.own)}</button></div>
   </div>`;
 }
@@ -942,34 +989,43 @@ function viewIntro() {
   </div>`;
 }
 
-function viewCal() {
+/* Содержимое панели календаря. При смене месяца перерисовывается только оно, а не всё приложение,
+   поэтому панель не выезжает заново. dir — откуда въезжают дни: 1 справа, -1 слева. */
+function calSheet(dir = 0) {
   const { y, m } = state.cal, b = calBounds(), cur = y * 12 + m;
   const offset = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
   let cells = '';
-  for (let i = 0; i < offset; i++) cells += '<span></span>';
+  for (let i = 0; i < offset; i++) cells += '<span class="day-empty"></span>';
   for (let d = 1; d <= days; d++) {
     const iso = y + '-' + pad2(m + 1) + '-' + pad2(d), wd = (offset + d - 1) % 7, hol = t.holidays[pad2(m + 1) + '-' + pad2(d)];
     const cls = ['day', wd >= 5 ? 'we' : '', iso === today ? 'today' : '', iso === state.date ? 'sel' : ''].filter(Boolean).join(' ');
     cells += `<button class="${cls}" data-act="calPick" data-d="${iso}"${iso < today ? ' disabled' : ''} aria-pressed="${iso === state.date}" aria-label="${esc(fmtDate(iso))}">${d}${hol ? `<span class="hd" aria-hidden="true">${hol}</span>` : ''}</button>`;
   }
+  for (let i = offset + days; i < 42; i++) cells += '<span class="day-empty"></span>';   // всегда 6 строк: высота панели не меняется
   const chips = quickDates().map(([emo, iso]) => `<button class="chip${iso === state.date ? ' on' : ''}" data-act="calPick" data-d="${iso}">${emo} ${esc(shortDate(iso))}</button>`).join('');
+  const slide = dir > 0 ? ' from-r' : dir < 0 ? ' from-l' : '';
   return `
-  <div class="sheet-back" data-act="calClose">
-    <div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-labelledby="calT">
       <span class="grab" aria-hidden="true"></span>
       <h2 id="calT" tabindex="-1">${esc(t.calTitle)}</h2>
       <div class="chips">${chips}</div>
       <div class="cal-head">
         <button class="cal-nav" data-act="calMove" data-d="-1"${cur <= b.min ? ' disabled' : ''} aria-label="${esc(t.calPrev)}">‹</button>
-        <b>${esc(t.months[m])} ${y}</b>
+        <b class="${slide}" aria-live="polite">${esc(t.months[m])} ${y}</b>
         <button class="cal-nav" data-act="calMove" data-d="1"${cur >= b.max ? ' disabled' : ''} aria-label="${esc(t.calNext)}">›</button>
       </div>
-      <div class="cal-grid">${t.wdays.map((w, i) => `<span class="wd${i >= 5 ? ' we' : ''}">${esc(w)}</span>`).join('')}${cells}</div>
+      <div class="cal-grid cal-wd">${t.wdays.map((w, i) => `<span class="wd${i >= 5 ? ' we' : ''}">${esc(w)}</span>`).join('')}</div>
+      <div class="cal-grid cal-days${slide}">${cells}</div>
       <div class="cal-foot">
         <button class="btn light" data-act="calClear">${esc(t.calNone)}</button>
         <button class="btn" data-act="calClose">${esc(t.calDone)}</button>
-      </div>
-    </div>
+      </div>`;
+}
+function viewCal() {
+  const enter = state.calEnter ? ' enter' : '';   // анимация выезда только при открытии
+  state.calEnter = false;
+  return `
+  <div class="sheet-back${enter}" data-act="calClose">
+    <div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-labelledby="calT">${calSheet()}</div>
   </div>`;
 }
 
@@ -990,6 +1046,7 @@ function render() {
   if (typed) { const el = $('#newName'); if (el) el.value = typed; }
   if (ver('6.1')) { try { backTarget() ? tg.BackButton.show() : tg.BackButton.hide(); } catch (e) {} }
   if (state.focus) { const el = $(state.focus); if (el) el.focus({ preventScroll: true }); state.focus = null; }
+  syncMainButton();
 }
 
 /* ───────────── действия ───────────── */
@@ -1027,6 +1084,20 @@ function runDraw(cfg) {
   const items = cfg.people.map((name, i) => ({ name, sent: false, payload: encodePair(Object.assign({}, meta, { from: name, to: cfg.people[to[i]] })) }));
   if (items.some(x => x.payload.length > 512)) return { err: t.tooLong };   // лимит параметра startapp
   return { draw: { title: meta.title, code, me: cfg.me, cfg, items } };
+}
+
+function showErr(msg) {
+  state.err = msg; hap.err(); render();
+  const el = $('.err'); if (el) el.scrollIntoView({ block: 'center', behavior: REDUCE ? 'auto' : 'smooth' });
+}
+function moveCal(dir) {
+  if (!state.cal || !dir) return;
+  const b = calBounds(), n = state.cal.y * 12 + state.cal.m + dir;
+  if (n < b.min || n > b.max) return;
+  state.cal = { y: Math.floor(n / 12), m: n % 12 }; hap.tap();
+  const sh = $('.sheet'); if (!sh) { render(); return; }
+  sh.innerHTML = calSheet(dir);   // меняем только содержимое панели, сама панель остаётся на месте
+  const nav = $(`.cal-nav[data-d="${dir}"]`, sh); if (nav && !nav.disabled) nav.focus({ preventScroll: true });
 }
 
 const othersAllSent = d => d.items.some((_, i) => i !== d.me) && d.items.every((x, i) => i === d.me || x.sent);
@@ -1070,9 +1141,9 @@ const actions = {
   draw() {
     const nn = $('#newName');
     if (nn && clean(nn.value)) { actions.add(); if (state.err) return; }
-    if (state.people.length < 3) { state.err = t.needMore; hap.err(); render(); return; }
+    if (state.people.length < 3) { showErr(t.needMore); return; }
     const r = runDraw(currentCfg());
-    if (r.err) { state.err = r.err; hap.err(); render(); return; }
+    if (r.err) { showErr(r.err); return; }
     state.err = ''; state.draw = r.draw; saveJSON('draw', state.draw); saveDraftSoon();
     state.screen = 'result'; state.cheer = true; hap.ok(); render(); window.scrollTo(0, 0); cheer();
   },
@@ -1136,12 +1207,9 @@ const actions = {
   },
   back() { const f = backTarget(); if (f) f(); },
   noop() {},
-  calOpen() { state.cal = calStart(); state.focus = '#calT'; render(); },
-  calMove(_, el) {
-    const b = calBounds(), n = state.cal.y * 12 + state.cal.m + Number(el.dataset.d);
-    if (n < b.min || n > b.max) return;
-    state.cal = { y: Math.floor(n / 12), m: n % 12 }; hap.tap(); render();
-  },
+  calOpen() { state.cal = calStart(); state.calEnter = true; state.focus = '#calT'; render(); },
+  calMove(_, el) { moveCal(Number(el.dataset.d)); },
+  switchLang() { hap.tap(); setLang(lang === 'ru' ? 'en' : 'ru'); },
   calPick(_, el) {
     const d = el.dataset.d; if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < today) return;
     state.date = d; state.cal = null; hap.ok(); saveDraftSoon(); render();
@@ -1178,13 +1246,33 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowRight') actions.introNext();
   else if (e.key === 'ArrowLeft') actions.introPrev();
 });
-let swipeX = null;   // листание обучения пальцем
-app.addEventListener('touchstart', e => { swipeX = e.target.closest('.intro') ? e.touches[0].clientX : null; }, { passive: true });
-app.addEventListener('touchend', e => {
-  if (swipeX == null) return;
-  const dx = e.changedTouches[0].clientX - swipeX; swipeX = null;
-  if (Math.abs(dx) > 60) actions[dx < 0 ? 'introNext' : 'introPrev']();
+let swipe = null;   // листание пальцем: слайды обучения и месяцы календаря
+app.addEventListener('touchstart', e => {
+  const where = e.target.closest('.intro') ? 'intro' : e.target.closest('.cal-days, .cal-head') ? 'cal' : null;
+  swipe = where ? { where, x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
 }, { passive: true });
+app.addEventListener('touchend', e => {
+  if (!swipe) return;
+  const dx = e.changedTouches[0].clientX - swipe.x, dy = e.changedTouches[0].clientY - swipe.y, where = swipe.where; swipe = null;
+  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+  if (where === 'intro') actions[dx < 0 ? 'introNext' : 'introPrev']();
+  else moveCal(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+/* Пока печатаем, нижняя кнопка браузерной версии плавно уезжает вниз и не закрывает поле,
+   а само поле прокручивается в середину видимой области над клавиатурой. */
+const isTextField = el => el && ((el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit)$/.test(el.type)) || el.tagName === 'TEXTAREA');
+let typingTimer;
+app.addEventListener('focusin', e => {
+  if (!isTextField(e.target)) return;
+  clearTimeout(typingTimer); document.body.classList.add('typing');
+  const el = e.target;
+  setTimeout(() => { if (document.activeElement === el) el.scrollIntoView({ block: 'center', behavior: REDUCE ? 'auto' : 'smooth' }); }, 350);
+});
+app.addEventListener('focusout', () => {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => { if (!isTextField(document.activeElement)) document.body.classList.remove('typing'); }, 150);
+});
 const onField = e => {
   const el = e.target, f = el.dataset && el.dataset.f; if (!f) return;
   state[f] = el.type === 'checkbox' ? el.checked : el.value;
@@ -1207,6 +1295,7 @@ async function boot() {
     } catch (e) {}
     try { if (ver('7.7')) tg.disableVerticalSwipes(); } catch (e) {}   // список не сворачивает приложение при прокрутке
     try { if (ver('6.1')) tg.BackButton.onClick(() => { const f = backTarget(); if (f) f(); }); } catch (e) {}
+    if (MB) { document.body.classList.add('tgmb'); try { MB.onClick(() => actions.draw()); } catch (e) {} }
   }
   const p = incomingParam();
   if (p) {                                   // открыли личную ссылку: показываем сразу, не ждём хранилище
