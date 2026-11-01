@@ -7,14 +7,15 @@
 <meta name="theme-color" content="#0a1440">
 <meta name="referrer" content="no-referrer">
 <!-- Странице не нужны никакие сетевые запросы, кроме скрипта Telegram. Если имена всё же попадут в разметку как код, отправить их наружу не выйдет. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; font-src data:; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' https://telegram.org; style-src 'unsafe-inline'; font-src data:; img-src 'self' data:; base-uri 'none'; form-action 'none'">
 <title>Тайный Санта</title>
 <!--
-  Тайный Санта — Telegram Mini App без бэкенда. Один файл, без платных и внешних ресурсов:
-  персонажи и украшения нарисованы прямо здесь (SVG), шрифт Caveat (SIL OFL) вшит в страницу.
+  Тайный Санта — Telegram Mini App без бэкенда, без платных и внешних ресурсов.
+  Санта — спрайты pzUH (CC0, OpenGameArt) в папке sprites/, подробности и хэши в CREDITS.md.
+  Украшения нарисованы прямо здесь (SVG), шрифт Caveat (SIL OFL) вшит в страницу.
 
   Запуск:
-  1. Выложите файл как index.html на любой бесплатный HTTPS-хостинг (GitHub Pages, Netlify, Cloudflare Pages).
+  1. Выложите index.html вместе с папкой sprites/ на любой бесплатный HTTPS-хостинг (GitHub Pages, Netlify, Cloudflare Pages).
      Проверьте, что страница открывается с мобильного интернета в России: некоторые зарубежные хостинги там бывают замедлены.
   2. @BotFather → /newbot (если бота ещё нет) → /newapp → URL страницы и короткое имя, например santa.
   3. Впишите ниже в APP_LINK адрес вида https://t.me/ИМЯ_БОТА/santa
@@ -67,11 +68,16 @@ h1.c,.c{text-align:center}
 .hand{font-family:"Caveat","Segoe Script","Bradley Hand",cursive;font-weight:600;line-height:1;overflow-wrap:anywhere}
 
 /* ── спрайты ── */
-.santa{display:block}
-.santa .arm{transform-origin:87px 110px;animation:wave 1.8s ease-in-out infinite}
-@keyframes wave{0%,100%{transform:rotate(0)}50%{transform:rotate(-16deg)}}
-.santa .eyes{transform-origin:60px 68px;animation:blink 4.5s infinite}
-@keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+/* Санта: горизонтальная полоса из 8 кадров внутри окошка шириной в один кадр */
+.sp{position:relative;display:block;flex:0 0 auto;overflow:hidden}
+.sp img{display:block;height:100%;width:auto;max-width:none;-webkit-user-drag:none;user-select:none;animation:strip 1.1s steps(8) infinite}
+.sp-jump img{animation-duration:.8s}
+.sp-jump.once{animation:hopUp .8s ease-in-out 2}
+.sp-jump.once img{animation-iteration-count:2}
+@keyframes strip{to{transform:translateX(-100%)}}
+@keyframes hopUp{0%,100%{transform:translateY(0)}45%{transform:translateY(-16px)}}
+.sp.fail img{display:none}
+.sp.fail::after{content:"🎅";position:absolute;inset:0;display:grid;place-items:center;font-size:56px}
 .bob{animation:bob 3s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 .gift{display:block;width:46px;height:46px}
@@ -79,12 +85,12 @@ h1.c,.c{text-align:center}
 .hop:nth-child(2){animation-delay:.3s}.hop:nth-child(3){animation-delay:.6s}.hop:nth-child(4){animation-delay:.9s}
 @keyframes hop{0%,70%,100%{transform:translateY(0)}80%{transform:translateY(-10px) rotate(-6deg)}90%{transform:translateY(0) rotate(3deg)}}
 .pile{display:flex;justify-content:center;align-items:flex-end;gap:2px}
+.stage-foot{display:flex;justify-content:center;align-items:flex-end;gap:6px}
 
 /* ── шапка ── */
-.hero{position:relative;display:flex;align-items:center;gap:8px;padding:14px 14px 14px 6px;border-radius:24px;color:#fff;
+.hero{position:relative;display:flex;align-items:center;gap:14px;padding:14px 14px 14px 16px;border-radius:24px;color:#fff;
   background:linear-gradient(135deg,#7c5cff 0%,#4b6bff 55%,#4fc3ff 115%);box-shadow:0 14px 34px rgba(76,90,255,.45)}
 .hero.green{background:linear-gradient(135deg,#12b886 0%,#1a9fc9 100%);box-shadow:0 14px 34px rgba(18,184,134,.35)}
-.hero .santa{flex:0 0 96px;width:96px;height:120px}
 .hero h1{margin:0;font-size:46px;line-height:.95}
 .hero p{margin:6px 0 0;font-size:14px;line-height:1.3;color:rgba(255,255,255,.93)}
 .howto{display:inline-flex;align-items:center;gap:6px;margin-top:10px;min-height:32px;padding:0 12px;border-radius:16px;background:rgba(255,255,255,.22);font-size:14px;font-weight:700}
@@ -182,7 +188,8 @@ select.cur{flex:0 0 auto;padding:7px 6px;font-size:15px;font-weight:600}
 
 /* ── загрузка ── */
 .load{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:80vh}
-.load .santa{width:130px;height:162px}
+.load .sp{margin-bottom:6px}
+.credit{color:rgba(255,255,255,.45);font-size:12px;text-align:center;margin:28px 16px 0}
 
 /* ── обучение ── */
 .intro{position:fixed;inset:0;z-index:40;overflow:auto;background:linear-gradient(180deg,#0a1440,#34248f);padding:calc(14px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}
@@ -194,7 +201,6 @@ select.cur{flex:0 0 auto;padding:7px 6px;font-size:15px;font-weight:600}
 .intro-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 0;animation:slideIn .35s ease-out}
 @keyframes slideIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
 .intro-art{height:150px;display:flex;justify-content:center;align-items:flex-end;gap:4px;margin-bottom:14px}
-.intro-art .santa{width:112px;height:140px}
 .intro-art .tree{width:100px;height:138px}
 .intro-art .mini-tag{width:96px;height:128px}
 .intro h2{font-size:26px;line-height:1.15;margin:0 0 8px;text-align:center}
@@ -206,6 +212,40 @@ select.cur{flex:0 0 auto;padding:7px 6px;font-size:15px;font-weight:600}
 .lg-c{flex:0 0 118px;display:flex;justify-content:center}
 .lg-t{font-size:14px;line-height:1.3}
 .intro-nav{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;margin-top:18px}
+
+/* ── календарь ── */
+.row .val{margin-left:auto;padding:14px 0;font-weight:600;text-align:right}
+.row .val.ph{color:#a3a0bf;font-weight:400}
+.cal-ic{font-size:18px}
+.sheet-back{position:fixed;inset:0;z-index:45;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,8,30,.6);animation:fade .2s ease-out}
+@keyframes fade{from{opacity:0}}
+.sheet{width:100%;max-width:480px;max-height:92vh;overflow:auto;background:#fff;color:var(--text);border-radius:26px 26px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.35);animation:sheetUp .32s cubic-bezier(.2,.9,.3,1.15)}
+@keyframes sheetUp{from{transform:translateY(100%)}}
+.grab{display:block;width:40px;height:5px;border-radius:3px;background:#dcd9ea;margin:0 auto 12px}
+.sheet h2{font-size:20px;margin:0 0 12px;text-align:center}
+#calT:focus{outline:none}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 14px;margin:0 -2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;min-height:36px;padding:0 12px;border-radius:18px;background:var(--field);color:var(--violet);font-size:14px;font-weight:700;white-space:nowrap;transition:transform .12s}
+.chip:active{transform:scale(.94)}
+.chip.on{background:var(--violet);color:#fff}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin:2px 0 10px}
+.cal-head b{font-size:18px}
+.cal-nav{width:40px;height:40px;border-radius:50%;background:var(--field);color:var(--violet);font-size:26px;line-height:38px;text-align:center}
+.cal-nav:disabled{opacity:.35;cursor:default}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.wd{padding:4px 0 6px;text-align:center;font-size:12px;font-weight:700;color:var(--hint)}
+.wd.we{color:var(--red)}
+.day{position:relative;aspect-ratio:1;max-height:52px;border-radius:50%;display:grid;place-items:center;text-align:center;font-size:16px;font-weight:600;transition:transform .12s,background .2s}
+.day.we{color:#e0264a}
+.day.today{box-shadow:inset 0 0 0 2px var(--violet)}
+.day:not(:disabled):active{transform:scale(.88)}
+.day:disabled{color:#d3d1e3;cursor:default}
+.day.sel{background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;box-shadow:0 6px 14px rgba(255,61,90,.45);animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+.day .hd{position:absolute;right:-1px;top:-3px;font-size:11px;line-height:1}
+.cal-foot{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
+.btn.light{background:var(--field);color:var(--text);box-shadow:none;font-weight:600}
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
@@ -254,6 +294,10 @@ ru: {
   lead: 'Соберите компанию, проведите жеребьёвку и отправьте каждому личную ссылку с его парой.',
   howto: 'Как играть?',
   fTitle: 'Название', budget: 'Бюджет', phBudget: n => `до ${n}`, cur: 'Валюта', date: 'Дата обмена', org: 'Организатор',
+  calPick: 'Выбрать', calTitle: 'Когда дарим подарки?', calNone: 'Без даты', calDone: 'Готово', calPrev: 'Предыдущий месяц', calNext: 'Следующий месяц',
+  months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+  wdays: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+  holidays: { '12-25': '🎁', '12-31': '🎄', '01-01': '🎆', '01-07': '⭐' },
   people: 'Участники', phName: 'Имена через запятую', add: 'Добавить',
   needMore: 'Нужно минимум 3 участника.',
   meNote: '★ — это вы. Отметьте себя: свою пару вы узнаете на бирке, как и все.',
@@ -289,7 +333,7 @@ ru: {
   secretNote: '🤫 Никому не показывай и не пересылай эту ссылку.',
   own: 'Организовать свою жеребьёвку',
   badTitle: 'Ссылка не открылась', badText: 'Похоже, она скопировалась не полностью. Попросите организатора прислать её ещё раз.',
-  tagLabel: 'Бирка с подарком',
+  tagLabel: 'Бирка с подарком', credit: 'Санта — pzUH, CC0 (OpenGameArt)',
   loading: 'Достаём подарки из мешка…',
   skip: 'Пропустить', next: 'Дальше', prev: 'Назад', start: 'Поехали! 🎄',
   slides: [
@@ -311,6 +355,10 @@ en: {
   lead: 'Gather your group, run the draw and send everyone a personal link with their match.',
   howto: 'How to play?',
   fTitle: 'Name', budget: 'Budget', phBudget: n => `up to ${n}`, cur: 'Currency', date: 'Gift swap date', org: 'Organizer',
+  calPick: 'Choose', calTitle: 'When do we swap gifts?', calNone: 'No date', calDone: 'Done', calPrev: 'Previous month', calNext: 'Next month',
+  months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  wdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+  holidays: { '12-24': '🎄', '12-25': '🎁', '12-31': '🎆', '01-01': '🎆' },
   people: 'Participants', phName: 'Names, comma-separated', add: 'Add',
   needMore: 'You need at least 3 participants.',
   meNote: '★ is you. Mark yourself: you will find your match on your tag, like everyone else.',
@@ -346,7 +394,7 @@ en: {
   secretNote: '🤫 Do not show or forward this link to anyone.',
   own: 'Organize your own draw',
   badTitle: 'The link did not open', badText: 'It may have been copied only partly. Ask the organizer to send it again.',
-  tagLabel: 'Gift tag',
+  tagLabel: 'Gift tag', credit: 'Santa by pzUH, CC0 (OpenGameArt)',
   loading: 'Unpacking the gifts…',
   skip: 'Skip', next: 'Next', prev: 'Back', start: 'Let’s go! 🎄',
   slides: [
@@ -403,28 +451,28 @@ function budgetText(amount, cur) {
   return a + ' ' + c[1];
 }
 
-/* ───────────── спрайты (нарисованы здесь, свободны от лицензий) ───────────── */
+/* ───────────── Санта: спрайты pzUH, CC0 (см. CREDITS.md) ───────────── */
+const SPRITES = {
+  idle: { src: 'sprites/santa-idle.png', w: 127, h: 200 },   // 8 кадров в полосе
+  jump: { src: 'sprites/santa-jump.png', w: 170, h: 200 }
+};
+function santa(height, kind = 'idle', cls = '') {
+  const s = SPRITES[kind];
+  return `<span class="sp sp-${kind} ${cls}" style="height:${height}px;width:${Math.round(height * s.w / s.h)}px" aria-hidden="true"><img src="${s.src}" alt="" draggable="false"></span>`;
+}
+/* после прыжка Санта снова спокойно стоит */
+document.addEventListener('animationend', e => {
+  const el = e.target;
+  if (el.classList && el.classList.contains('sp-jump') && el.classList.contains('once')) el.outerHTML = santa(el.offsetHeight);
+});
+/* если папку sprites/ забыли выложить, вместо пустого места будет эмодзи */
+document.addEventListener('error', e => {
+  const sp = e.target && e.target.closest && e.target.closest('.sp');
+  if (sp) sp.classList.add('fail');
+}, true);
+
+/* ───────────── украшения (нарисованы здесь) ───────────── */
 const ART = {
-  santa: (cls = '') => `<svg class="santa ${cls}" viewBox="0 0 120 150" aria-hidden="true">
-<ellipse cx="60" cy="146" rx="36" ry="4" fill="#000" opacity=".2"/>
-<path d="M33 110c-10 8-12 20-8 28" stroke="#d81f37" stroke-width="12" stroke-linecap="round" fill="none"/>
-<circle cx="25" cy="139" r="7" fill="#14a86a"/>
-<path d="M26 146c0-34 14-48 34-48s34 14 34 48z" fill="#e8283f"/>
-<path d="M55 99h10v47H55z" fill="#fff"/>
-<rect x="26" y="123" width="68" height="9" fill="#2a1b12"/>
-<rect x="52.5" y="121" width="15" height="13" rx="2" fill="none" stroke="#ffc83d" stroke-width="3"/>
-<g class="arm"><path d="M87 110c10-6 14-16 13-28" stroke="#e8283f" stroke-width="12" stroke-linecap="round" fill="none"/><rect x="92" y="75" width="16" height="7" rx="3.5" fill="#fff"/><circle cx="100" cy="68" r="8" fill="#14a86a"/></g>
-<circle cx="60" cy="72" r="21" fill="#ffd2ad"/>
-<g fill="#fff"><circle cx="41" cy="86" r="10"/><circle cx="47" cy="100" r="11"/><circle cx="60" cy="107" r="12"/><circle cx="73" cy="100" r="11"/><circle cx="79" cy="86" r="10"/><path d="M39 79h42v16H39z"/></g>
-<ellipse cx="60" cy="90" rx="4.5" ry="3.2" fill="#c2263f"/>
-<g fill="#fff" stroke="#e3e6f0"><ellipse cx="51.5" cy="82" rx="9" ry="5"/><ellipse cx="68.5" cy="82" rx="9" ry="5"/></g>
-<circle cx="60" cy="77" r="4.5" fill="#ff9a86"/>
-<circle cx="45" cy="75" r="4.5" fill="#ff7f96" opacity=".5"/><circle cx="75" cy="75" r="4.5" fill="#ff7f96" opacity=".5"/>
-<g class="eyes" fill="#2a1b12"><ellipse cx="52" cy="68" rx="2.6" ry="3"/><ellipse cx="68" cy="68" rx="2.6" ry="3"/></g>
-<path d="M37 58C38 32 56 16 80 16c10 0 18 6 20 14-6-3-13-2-17 4-4 7-1 17 1 24z" fill="#e8283f"/>
-<rect x="33" y="50" width="54" height="13" rx="6.5" fill="#fff"/>
-<circle cx="100" cy="31" r="8" fill="#fff"/>
-</svg>`,
   gift: (box, lid, rib, cls = '') => `<svg class="gift ${cls}" viewBox="0 0 64 64" aria-hidden="true"><rect x="9" y="28" width="46" height="30" rx="4" fill="${box}"/><rect x="9" y="28" width="46" height="6" fill="#000" opacity=".12"/><rect x="6" y="20" width="52" height="11" rx="3" fill="${lid}"/><rect x="28" y="20" width="8" height="38" fill="${rib}"/><path d="M32 20c-6-12-20-12-17-3 2 5 11 4 17 3zm0 0c6-12 20-12 17-3-2 5-11 4-17 3z" fill="${rib}"/></svg>`,
   tree: () => `<svg class="tree" viewBox="0 0 80 110" aria-hidden="true"><rect x="35" y="94" width="10" height="14" rx="2" fill="#8a5a2b"/><path d="M40 50 78 96H2z" fill="#14935b"/><path d="M40 28 70 72H10z" fill="#1aa86a"/><path d="M40 10 62 46H18z" fill="#22c07a"/><circle cx="30" cy="62" r="4" fill="#ff3d5a"/><circle cx="52" cy="56" r="4" fill="#ffc83d"/><circle cx="24" cy="86" r="4" fill="#4fc3ff"/><circle cx="56" cy="84" r="4" fill="#ff3d5a"/><circle cx="42" cy="74" r="3.5" fill="#fff"/><circle cx="38" cy="40" r="3.5" fill="#4fc3ff"/><polygon points="40,0 42.4,5.6 48.5,6 43.8,9.8 45.3,15.6 40,12.4 34.7,15.6 36.2,9.8 31.5,6 37.6,5.6" fill="#ffc83d"/></svg>`,
   tag: () => `<svg class="mini-tag bob" viewBox="0 0 90 120" aria-hidden="true"><line x1="45" y1="0" x2="45" y2="26" stroke="#ffc83d" stroke-width="2.5"/><path d="M23 20h44l23 14v86H0V34z" fill="#dcb27c"/><circle cx="45" cy="32" r="6" fill="#13215f" stroke="#b98f5c" stroke-width="3"/><text x="45" y="92" text-anchor="middle" font-family="Caveat,cursive" font-weight="600" font-size="46" fill="#3a2817">?</text></svg>`
@@ -432,10 +480,10 @@ const ART = {
 const GIFTS = [['#ff3d5a', '#ff6b81', '#ffc83d'], ['#7c5cff', '#9b82ff', '#4fc3ff'], ['#12b886', '#3fd4a6', '#ff3d5a'], ['#ffc83d', '#ffd76e', '#7c5cff']];
 const pile = (n, cls = 'hop') => `<div class="pile">${GIFTS.slice(0, n).map(g => ART.gift(g[0], g[1], g[2], cls)).join('')}</div>`;
 const SCENES = {
-  hello: () => ART.santa('bob') + pile(2),
+  hello: () => santa(140) + pile(2),
   company: () => pile(4),
   rules: () => ART.tree() + pile(1),
-  send: () => ART.santa('bob') + pile(3),
+  send: () => santa(140, 'jump') + pile(3),
   tag: () => ART.tag()
 };
 const CHIPS = {
@@ -585,7 +633,36 @@ function incomingParam() {
 function fmtDate(iso) {
   const d = new Date(iso + 'T12:00:00');
   if (isNaN(d)) return iso;
-  try { return d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB', { day: 'numeric', month: 'long' }); } catch (e) { return iso; }
+  try { return d.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long' }); } catch (e) { return iso; }
+}
+
+/* ───────────── календарь ───────────── */
+const pad2 = n => String(n).padStart(2, '0');
+const isoOf = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+function calStart() {   // какой месяц показать при открытии
+  if (state.date) { const [y, m] = state.date.split('-').map(Number); return { y, m: m - 1 }; }
+  const now = new Date();
+  // в октябре–ноябре сразу показываем декабрь: подарки обычно дарят под Новый год
+  return now.getMonth() === 9 || now.getMonth() === 10 ? { y: now.getFullYear(), m: 11 } : { y: now.getFullYear(), m: now.getMonth() };
+}
+function calBounds() {
+  const now = new Date();
+  return { min: now.getFullYear() * 12 + now.getMonth(), max: now.getFullYear() * 12 + now.getMonth() + 18 };
+}
+function quickDates() {   // быстрые варианты: ближайшая пятница и праздники
+  const now = new Date(); now.setHours(12, 0, 0, 0);
+  const fri = new Date(now); fri.setDate(now.getDate() + ((5 - now.getDay() + 7) % 7 || 7));
+  const out = [['🎉', isoOf(fri)]];
+  for (const md of Object.keys(t.holidays)) {
+    const [mm, dd] = md.split('-').map(Number);
+    let d = isoOf(new Date(now.getFullYear(), mm - 1, dd, 12));
+    if (d < today) d = isoOf(new Date(now.getFullYear() + 1, mm - 1, dd, 12));
+    out.push([t.holidays[md], d]);
+  }
+  return out.sort((a, b) => a[1] < b[1] ? -1 : 1).filter((x, i, a) => !i || x[1] !== a[i - 1][1]);
+}
+function shortDate(iso) {
+  try { return new Date(iso + 'T12:00:00').toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return iso; }
 }
 
 /* ───────────── хранилище: CloudStorage Telegram + localStorage ───────────── */
@@ -644,7 +721,7 @@ function dropJSON(name) {
 
 /* ───────────── состояние ───────────── */
 const state = {
-  screen: 'loading', err: '', focus: null, intro: null, introSeen: false,
+  screen: 'loading', err: '', focus: null, intro: null, introSeen: false, cal: null, cheer: false,
   title: '', budget: '', cur: DEFAULT_CUR, date: '', people: [], me: -1, excl: [], noMutual: true, pick1: '', pick2: '',
   draw: null,     // { title, code, me, cfg, items: [{ name, payload, sent }] }
   mine: [],       // сохранённые личные ссылки, которые я получил
@@ -704,7 +781,7 @@ function remember(payload) {
 
 /* ───────────── экраны ───────────── */
 function viewLoading() {
-  return `<div class="wrap plain load">${ART.santa('bob')}<p class="lead c">${esc(t.loading)}</p></div>`;
+  return `<div class="wrap plain load">${santa(150)}<p class="lead c">${esc(t.loading)}</p></div>`;
 }
 
 function viewSetup() {
@@ -724,7 +801,7 @@ function viewSetup() {
   return `
   <div class="wrap">
     <div class="hero">
-      ${ART.santa('bob')}
+      ${santa(120)}
       <div>
         <h1 class="hand">${esc(t.app)}</h1>
         <p>${esc(t.lead)}</p>
@@ -737,7 +814,7 @@ function viewSetup() {
     <div class="sect">
       <label class="row"><span class="lbl">${esc(t.fTitle)}</span><input class="r" data-f="title" maxlength="${LIMITS.title}" placeholder="${esc(t.app)}" value="${esc(s.title)}" autocomplete="off" enterkeyhint="done"></label>
       <div class="row"><label class="lbl" for="budget">${esc(t.budget)}</label><input class="r" id="budget" data-f="budget" maxlength="${LIMITS.budget}" placeholder="${esc(t.phBudget((curOf(s.cur) || CURRENCIES[0])[2]))}" value="${esc(s.budget)}" autocomplete="off" enterkeyhint="done"><select class="cur" data-f="cur" aria-label="${esc(t.cur)}">${CURRENCIES.map(([code, sym]) => `<option value="${code}"${s.cur === code ? ' selected' : ''}>${sym} ${code}</option>`).join('')}</select></div>
-      <label class="row"><span class="lbl">${esc(t.date)}</span><input class="r" type="date" data-f="date" min="${today}" value="${esc(s.date)}"></label>
+      <button class="row link" data-act="calOpen"><span class="lbl">${esc(t.date)}</span><span class="val${s.date ? '' : ' ph'}">${esc(s.date ? fmtDate(s.date) : t.calPick)}</span><span class="cal-ic" aria-hidden="true">📅</span></button>
     </div>
 
     <div class="cap"><span>${esc(t.people)}</span><span>${n} / ${LIMITS.people}</span></div>
@@ -759,6 +836,7 @@ function viewSetup() {
       <div class="row pair"><select data-f="pick1" aria-label="${esc(t.exTitle)}">${opts(s.pick1)}</select><select data-f="pick2" aria-label="${esc(t.exTitle)}">${opts(s.pick2)}</select><button class="pill mint" data-act="addx">${esc(t.add)}</button></div>
     </div>
     <p class="note">${esc(t.exNote)}</p>` : ''}
+    <p class="credit">${esc(t.credit)}</p>
   </div>
   <div class="bar"><div>
     ${s.err ? `<p class="err" role="alert">${esc(s.err)}</p>` : ''}
@@ -767,7 +845,8 @@ function viewSetup() {
 }
 
 function viewResult() {
-  const d = state.draw;
+  const d = state.draw, jump = state.cheer;
+  state.cheer = false;   // Санта прыгает только сразу после жеребьёвки
   const others = d.items.filter((_, i) => i !== d.me), done = others.filter(x => x.sent).length;
   const pct = others.length ? Math.round(done / others.length * 100) : 100;
   const rows = d.items.map((it, i) => `
@@ -781,7 +860,7 @@ function viewResult() {
   return `
   <div class="wrap plain">
     <div class="hero green">
-      ${ART.santa('bob')}
+      ${jump ? santa(120, 'jump', 'once') : santa(120)}
       <div>
         <h1 class="hand">${esc(t.resTitle)}</h1>
         <p>${esc(t.resLead)}</p>
@@ -828,7 +907,7 @@ function viewReveal() {
         <svg class="string" viewBox="0 0 20 104" aria-hidden="true"><line x1="10" y1="0" x2="10" y2="100" stroke="#ffc83d" stroke-width="2.5" stroke-linecap="round"/><circle cx="10" cy="100" r="3.5" fill="#ffc83d"/></svg>
       </div>
     </div>
-    ${pile(4)}
+    <div class="stage-foot"><span class="reveal-santa">${santa(96)}</span>${pile(3)}</div>
     ${rows.length ? `<div class="sect" style="margin-top:14px">${rows.map(r => `<div class="row kv"><span class="lbl">${esc(r[0])}</span><span class="val">${r[0] === t.codeLbl ? `<span class="code">${esc(r[1])}</span>` : esc(r[1])}</span></div>`).join('')}</div>` : ''}
     <p class="secret">${esc(t.secretNote)}</p>
     <div class="cta${v.seen ? ' on' : ''}"><button class="btn ghost" data-act="own">🎅 ${esc(t.own)}</button></div>
@@ -836,7 +915,7 @@ function viewReveal() {
 }
 
 function viewBad() {
-  return `<div class="wrap plain load">${ART.santa('bob')}<h1 class="c">${esc(t.badTitle)}</h1><p class="lead c">${esc(t.badText)}</p><button class="btn ghost" data-act="own">${esc(t.own)}</button></div>`;
+  return `<div class="wrap plain load">${santa(130)}<h1 class="c">${esc(t.badTitle)}</h1><p class="lead c">${esc(t.badText)}</p><button class="btn ghost" data-act="own">${esc(t.own)}</button></div>`;
 }
 
 function viewIntro() {
@@ -863,7 +942,39 @@ function viewIntro() {
   </div>`;
 }
 
+function viewCal() {
+  const { y, m } = state.cal, b = calBounds(), cur = y * 12 + m;
+  const offset = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate();
+  let cells = '';
+  for (let i = 0; i < offset; i++) cells += '<span></span>';
+  for (let d = 1; d <= days; d++) {
+    const iso = y + '-' + pad2(m + 1) + '-' + pad2(d), wd = (offset + d - 1) % 7, hol = t.holidays[pad2(m + 1) + '-' + pad2(d)];
+    const cls = ['day', wd >= 5 ? 'we' : '', iso === today ? 'today' : '', iso === state.date ? 'sel' : ''].filter(Boolean).join(' ');
+    cells += `<button class="${cls}" data-act="calPick" data-d="${iso}"${iso < today ? ' disabled' : ''} aria-pressed="${iso === state.date}" aria-label="${esc(fmtDate(iso))}">${d}${hol ? `<span class="hd" aria-hidden="true">${hol}</span>` : ''}</button>`;
+  }
+  const chips = quickDates().map(([emo, iso]) => `<button class="chip${iso === state.date ? ' on' : ''}" data-act="calPick" data-d="${iso}">${emo} ${esc(shortDate(iso))}</button>`).join('');
+  return `
+  <div class="sheet-back" data-act="calClose">
+    <div class="sheet" data-act="noop" role="dialog" aria-modal="true" aria-labelledby="calT">
+      <span class="grab" aria-hidden="true"></span>
+      <h2 id="calT" tabindex="-1">${esc(t.calTitle)}</h2>
+      <div class="chips">${chips}</div>
+      <div class="cal-head">
+        <button class="cal-nav" data-act="calMove" data-d="-1"${cur <= b.min ? ' disabled' : ''} aria-label="${esc(t.calPrev)}">‹</button>
+        <b>${esc(t.months[m])} ${y}</b>
+        <button class="cal-nav" data-act="calMove" data-d="1"${cur >= b.max ? ' disabled' : ''} aria-label="${esc(t.calNext)}">›</button>
+      </div>
+      <div class="cal-grid">${t.wdays.map((w, i) => `<span class="wd${i >= 5 ? ' we' : ''}">${esc(w)}</span>`).join('')}${cells}</div>
+      <div class="cal-foot">
+        <button class="btn light" data-act="calClear">${esc(t.calNone)}</button>
+        <button class="btn" data-act="calClose">${esc(t.calDone)}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function backTarget() {
+  if (state.cal) return () => actions.calClose();
   if (state.intro != null) return () => (state.intro > 0 ? actions.introPrev() : actions.introClose());
   if (state.screen === 'reveal' && state.view && state.view.back) {
     const to = state.view.back;
@@ -874,8 +985,8 @@ function backTarget() {
 function render() {
   const view = { loading: viewLoading, setup: viewSetup, result: viewResult, reveal: viewReveal, bad: viewBad }[state.screen];
   const nn = $('#newName'), typed = nn ? nn.value : '';   // недописанное имя не должно пропадать при перерисовке
-  app.innerHTML = view() + (state.intro != null ? viewIntro() : '');
-  document.body.classList.toggle('lock', state.intro != null);
+  app.innerHTML = view() + (state.intro != null ? viewIntro() : '') + (state.cal ? viewCal() : '');
+  document.body.classList.toggle('lock', state.intro != null || !!state.cal);
   if (typed) { const el = $('#newName'); if (el) el.value = typed; }
   if (ver('6.1')) { try { backTarget() ? tg.BackButton.show() : tg.BackButton.hide(); } catch (e) {} }
   if (state.focus) { const el = $(state.focus); if (el) el.focus({ preventScroll: true }); state.focus = null; }
@@ -963,7 +1074,7 @@ const actions = {
     const r = runDraw(currentCfg());
     if (r.err) { state.err = r.err; hap.err(); render(); return; }
     state.err = ''; state.draw = r.draw; saveJSON('draw', state.draw); saveDraftSoon();
-    state.screen = 'result'; hap.ok(); render(); window.scrollTo(0, 0); cheer();
+    state.screen = 'result'; state.cheer = true; hap.ok(); render(); window.scrollTo(0, 0); cheer();
   },
   toggle(i) { setSent(i, !state.draw.items[i].sent); },
   send(i) {
@@ -992,7 +1103,7 @@ const actions = {
     ask(t.redoAsk, () => {
       const r = runDraw(state.draw.cfg);
       if (r.err) { toast(r.err); hap.err(); return; }
-      state.draw = r.draw; saveJSON('draw', state.draw); hap.ok(); render(); window.scrollTo(0, 0);
+      state.draw = r.draw; saveJSON('draw', state.draw); state.cheer = true; hap.ok(); render(); window.scrollTo(0, 0);
       cheer(); toast(t.newCode(r.draw.code));
     });
   },
@@ -1012,7 +1123,10 @@ const actions = {
     if (open) {
       const first = !state.view.seen;
       state.view.seen = true; const c = $('.cta'); if (c) c.classList.add('on'); hap.ok();
-      if (first) { const r = tag.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + r.height * .45, 80); }
+      if (first) {
+        const r = tag.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + r.height * .45, 80);
+        const rs = $('.reveal-santa'); if (rs) rs.innerHTML = santa(96, 'jump', 'once');
+      }
     } else hap.tap();
   },
   own() {
@@ -1021,6 +1135,19 @@ const actions = {
     render(); window.scrollTo(0, 0);
   },
   back() { const f = backTarget(); if (f) f(); },
+  noop() {},
+  calOpen() { state.cal = calStart(); state.focus = '#calT'; render(); },
+  calMove(_, el) {
+    const b = calBounds(), n = state.cal.y * 12 + state.cal.m + Number(el.dataset.d);
+    if (n < b.min || n > b.max) return;
+    state.cal = { y: Math.floor(n / 12), m: n % 12 }; hap.tap(); render();
+  },
+  calPick(_, el) {
+    const d = el.dataset.d; if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < today) return;
+    state.date = d; state.cal = null; hap.ok(); saveDraftSoon(); render();
+  },
+  calClear() { state.date = ''; state.cal = null; hap.tap(); saveDraftSoon(); render(); },
+  calClose() { state.cal = null; render(); },
   help() { state.intro = 0; state.focus = '#introT'; render(); },
   introNext() {
     if (state.intro == null) return;
@@ -1045,6 +1172,7 @@ app.addEventListener('keydown', e => {
   else if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('tag')) { e.preventDefault(); actions.flip(); }
 });
 document.addEventListener('keydown', e => {
+  if (state.cal && e.key === 'Escape') { e.preventDefault(); actions.calClose(); return; }
   if (state.intro == null) return;
   if (e.key === 'Escape') { e.preventDefault(); actions.introClose(); }
   else if (e.key === 'ArrowRight') actions.introNext();
