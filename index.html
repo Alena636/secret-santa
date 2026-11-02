@@ -262,6 +262,26 @@ input,select{scroll-margin:120px 0}
 .cal-foot{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:16px}
 .btn.light{background:var(--field);color:var(--text);box-shadow:none;font-weight:600}
 
+/* ── подсказки поверх экрана: всё размыто, кроме кнопки, о которой речь ── */
+.tour{position:fixed;inset:0;z-index:50}
+.tour.enter{animation:fade .25s ease-out}
+.tv{position:fixed;inset:0;background:rgba(5,8,30,.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);transition:clip-path .3s ease}
+.tour-ring{position:fixed;box-shadow:0 0 0 3px var(--gold),0 0 22px 6px rgba(255,200,61,.55);transition:left .3s ease,top .3s ease,width .3s ease,height .3s ease;animation:ring 1.6s ease-in-out infinite}
+@keyframes ring{50%{box-shadow:0 0 0 3px var(--gold),0 0 30px 12px rgba(255,200,61,.3)}}
+/* старые WebView без clip-path: path() — затемнение тенью рамки, без размытия */
+.tour.flat .tv{display:none}
+.tour.flat .tour-ring{animation:none;box-shadow:0 0 0 3px var(--gold),0 0 0 200vmax rgba(5,8,30,.6)}
+.tour-tip{position:fixed;width:min(320px,calc(100vw - 32px));background:#fff;color:var(--text);border-radius:18px;padding:14px 16px 10px;box-shadow:0 14px 40px rgba(0,0,0,.4);transition:left .3s ease,top .3s ease}
+.tour-arr{position:absolute;top:-7px;width:14px;height:14px;background:#fff;transform:rotate(45deg);border-radius:2px}
+.tour-tip.up .tour-arr{top:auto;bottom:-7px}
+.tour-n{font-size:12px;font-weight:700;color:var(--hint);letter-spacing:.05em}
+.tour-tip h3{margin:2px 0 4px;font-size:18px}
+#tourT:focus{outline:none}
+.tour-tip p{margin:0;font-size:15px;line-height:1.35;color:#3d3a5c}
+.tour-nav{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.tour-nav .skip{color:var(--hint)}
+.pill.ic{padding:0 12px;font-size:17px}
+
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
@@ -323,124 +343,135 @@ const DEFAULT_CUR = tz === 'Europe/Minsk' || /\bbe\b|-by\b/.test(locs) ? 'BYN'
 const I = {
 ru: {
   app: 'Тайный Санта',
-  lead: 'Соберите компанию, проведите жеребьёвку и отправьте каждому личную ссылку с его парой.',
+  lead: 'Впишите имена друзей, проведите жеребьёвку и отправьте каждому его личную ссылку.',
   howto: 'Как играть?', langBtn: 'EN', langAria: 'Switch to English',
-  fTitle: 'Название', budget: 'Бюджет', phBudget: n => `до ${n}`, cur: 'Валюта', date: 'Дата обмена', org: 'Организатор',
+  fTitle: 'Название', budget: 'Бюджет', phBudget: n => `до ${n}`, cur: 'Валюта', date: 'Когда дарим', org: 'Организатор',
   calPick: 'Выбрать', calTitle: 'Когда дарим подарки?', calNone: 'Без даты', calDone: 'Готово', calPrev: 'Предыдущий месяц', calNext: 'Следующий месяц',
   months: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
   wdays: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
   holidays: { '12-25': '🎁', '12-31': '🎄', '01-01': '🎆', '01-07': '⭐' },
-  people: 'Участники', phName: 'Имена через запятую', add: 'Добавить',
-  needMore: 'Нужно минимум 3 участника.',
-  meNote: '★ — это вы. Отметьте себя: свою пару вы узнаете на бирке, как и все.',
+  people: 'Участники', phName: 'Имя или несколько через запятую', add: 'Добавить',
+  needMore: 'Добавьте хотя бы трёх человек.',
+  meNote: 'Если вы тоже играете, нажмите ☆ рядом со своим именем. Кому дарите вы, узнаете из своей бирки, как и все.',
   meLabel: 'Это я', del: 'Удалить',
-  rules: 'Правила',
-  noMutual: 'Без взаимных пар', noMutualSub: 'Если Аня дарит Борису, Борис не дарит Ане.',
-  exTitle: 'Не должны выпасть друг другу', exNote: 'Например, супруги или те, кто и так дарит друг другу подарки.',
+  rules: 'Условия',
+  noMutual: 'Без подарков друг другу', noMutualSub: 'Если Аня дарит Борису, то Борис дарит кому-то другому.',
+  exTitle: 'Кто не дарит друг другу', exNote: 'Например, супруги или те, кто и так обменивается подарками.',
   pick: 'Выберите', and: 'и',
-  draw: '🎁 Провести жеребьёвку', drawShort: '🎁 Жеребьёвка',
-  dup: n => `Имя «${n}» уже есть. Добавьте фамилию или инициал.`,
-  tooMany: `Максимум ${LIMITS.people} участников.`,
-  fail: 'Не получилось подобрать пары. Уберите часть условий или отключите «Без взаимных пар».',
-  tooLong: 'Название или имена слишком длинные для ссылки. Сократите их.',
+  draw: '🎁 Провести жеребьёвку',
+  dup: n => `Имя «${n}» уже есть. Добавьте фамилию или первую букву фамилии.`,
+  tooMany: `Можно не больше ${LIMITS.people} участников.`,
+  fail: 'С такими условиями распределить подарки не получается. Уберите часть исключений или выключите «Без подарков друг другу».',
+  tooLong: 'Название или имена слишком длинные, ссылка не помещается. Сократите их.',
   mineCap: 'Мои бирки',
   resTitle: 'Готово!',
-  resLead: 'Отправьте каждому его ссылку в личные сообщения. Не в общий чат: по ссылке видна пара.',
+  resLead: 'Теперь отправьте каждому его ссылку. Только в личные сообщения, не в общий чат: по ссылке видно, кому человек дарит подарок.',
   sent: (a, b) => `Отправлено ${a} из ${b}`,
-  send: 'Отправить', copy: 'Ссылка', mine: 'Моя пара', sentMark: 'Отметка «отправлено»',
-  markHint: 'Кружок слева — отметка «отправлено». Его можно снять.',
+  send: 'Отправить', copy: 'Скопировать ссылку', mine: 'Моя бирка', sentMark: 'Отметка «отправлено»',
+  markHint: 'Галочка ставится сама, когда вы отправили ссылку. Нажмите на кружок, чтобы поставить или снять её.',
   copied: 'Ссылка скопирована', copyFail: 'Не удалось скопировать',
   allSent: 'Все ссылки отправлены! 🎉',
   codeLbl: 'Код',
-  codeNote: c => `Код этой жеребьёвки — ${c}, он есть на бирке у каждого. Если провести жеребьёвку заново, код сменится: так старые ссылки легко отличить от новых.`,
-  newCode: c => `Новая жеребьёвка, код ${c}. Разошлите ссылки заново.`,
-  redo: 'Провести заново',
-  redoAsk: 'Уже отправленные ссылки продолжат показывать старые пары: отменить их нельзя. Новые ссылки нужно будет разослать всем заново. Продолжить?',
-  restart: 'Изменить участников',
-  restartAsk: 'Результат жеребьёвки удалится с этого устройства, список участников останется для правки. Уже отправленные ссылки продолжат работать. Продолжить?',
+  codeNote: c => `Код ${c} — метка этой жеребьёвки, он есть на бирке у каждого.`,
+  newGame: 'Новая игра',
+  newGameAsk: 'Начать новую игру? Эта жеребьёвка и список участников удалятся с этого устройства. Ссылки, которые вы уже отправили, продолжат работать.',
   back: 'Назад',
-  shareText: (ti, n) => `🎅 ${ti}. ${n}, это твоя личная ссылка: открой и узнай, кому ты даришь подарок. Никому её не пересылай!`,
+  shareText: (ti, n) => `🎅 ${ti}. ${n}, это твоя личная ссылка: открой её и узнаешь, кому даришь подарок. Никому её не пересылай!`,
   hi: n => `${n},`, tapTag: 'Нажми на бирку, чтобы узнать, кому ты даришь подарок',
-  youGive: 'Ты даришь подарок', secret: 'Это секрет. Нажми ещё раз, чтобы скрыть.',
+  youGive: 'Кому ты даришь:', secret: 'Это секрет. Нажми ещё раз, чтобы скрыть.',
   secretNote: '🤫 Никому не показывай и не пересылай эту ссылку.',
-  own: 'Организовать свою жеребьёвку',
-  badTitle: 'Ссылка не открылась', badText: 'Похоже, она скопировалась не полностью. Попросите организатора прислать её ещё раз.',
+  own: 'Устроить свою игру',
+  badTitle: 'Ссылка не открылась', badText: 'Похоже, она скопировалась не целиком. Попросите организатора прислать её ещё раз.',
   tagLabel: 'Бирка с подарком', credit: 'Санта — pzUH, CC0 (OpenGameArt)',
   loading: 'Достаём подарки из мешка…',
-  skip: 'Пропустить', next: 'Дальше', prev: 'Назад', start: 'Поехали! 🎄',
+  skip: 'Пропустить', next: 'Дальше', prev: 'Назад', start: 'Начать 🎄', tourDone: 'Понятно',
   slides: [
     { art: 'hello', title: 'Как играть в Тайного Санту',
-      text: 'Каждый участник тайно дарит подарок одному человеку из компании. Кто кому дарит, решает жеребьёвка, а знает об этом только сам даритель. Без регистрации: всё работает прямо в Telegram.' },
-    { art: 'company', title: 'Шаг 1. Соберите компанию',
-      text: 'Название, бюджет с валютой (₽, Br, ₸, $, €) и дата — по желанию. Их увидит каждый на своей бирке.',
-      legend: [['add', 'Добавляет имена из строки ввода. Можно сразу несколько через запятую'], ['star', 'Это вы. Свою пару узнаете на бирке, как и все'], ['x', 'Убирает участника из списка']] },
-    { art: 'rules', title: 'Шаг 2. Правила',
-      legend: [['sw', 'Без взаимных пар: если Аня дарит Борису, Борис не дарит Ане'], ['add', 'Пара, которая не должна выпасть друг другу, например супруги. Появляется от 4 участников']] },
-    { art: 'send', title: 'Шаг 3. Жеребьёвка и рассылка',
-      legend: [['draw', 'Случайно подбирает пары'], ['send', 'Открывает Telegram: выберите личный чат с этим человеком'], ['copy', 'Копирует ссылку, чтобы отправить где удобно'], ['chk', 'Ссылка отправлена. Нажмите, чтобы снять отметку'], ['mine', 'Ваша собственная бирка']] },
-    { art: 'tag', title: 'Шаг 4. Откройте бирку',
-      text: 'Участник открывает свою ссылку и нажимает на бирку: внутри имя того, кому он дарит подарок. Ссылку нельзя пересылать, по ней видна пара. Код на бирке показывает, к какой жеребьёвке она относится.' }
+      text: 'Каждый тайно дарит подарок одному человеку из компании. Кому именно, решает жеребьёвка, и знает об этом только сам даритель. Регистрироваться не нужно: всё работает прямо в Telegram.' },
+    { art: 'company', title: 'Шаг 1. Впишите участников',
+      text: 'Название, бюджет и дату заполнять не обязательно. Если заполните, каждый увидит их на своей бирке.',
+      legend: [['add', 'Добавляет имя. Можно вписать сразу несколько через запятую'], ['star', 'Отметьте себя, если тоже играете'], ['x', 'Убирает человека из списка']] },
+    { art: 'rules', title: 'Шаг 2. Условия',
+      legend: [['sw', 'Без подарков друг другу: если Аня дарит Борису, то Борис дарит кому-то другому'], ['add', 'Кто не должен дарить друг другу, например супруги. Появляется, когда участников 4 и больше']] },
+    { art: 'send', title: 'Шаг 3. Жеребьёвка и ссылки',
+      text: 'Нажмите «Провести жеребьёвку» внизу экрана. Появится список участников, у каждого своя ссылка. Отправьте её человеку в личные сообщения. Что делает каждая кнопка, покажем прямо на том экране.' },
+    { art: 'tag', title: 'Шаг 4. Бирка',
+      text: 'Участник открывает свою ссылку и нажимает на бирку. Там написано, кому он дарит подарок. Пересылать ссылку нельзя: по ней видно, кто кому дарит.' }
+  ],
+  /* подсказки на экране результата, порядок как в TOUR */
+  tour: [
+    ['Отправить', 'Откроется Telegram. Выберите личный чат с этим человеком, и ссылка уйдёт ему.'],
+    ['📋 Скопировать', 'Копирует ссылку, если удобнее отправить её в другом мессенджере или по почте.'],
+    ['Галочка «отправлено»', 'Показывает, кому вы уже отправили ссылку. Ставится сама, а нажатием её можно поставить или снять.'],
+    ['Моя бирка', 'Ваша собственная ссылка. Откройте её, чтобы узнать, кому дарите вы.'],
+    ['Сколько отправлено', 'Полоска заполняется, пока вы рассылаете ссылки. Код — метка этой жеребьёвки, он есть на бирке у каждого.'],
+    ['Новая игра', 'Удаляет эту жеребьёвку и открывает чистый экран для новой компании. Уже отправленные ссылки продолжат работать.']
   ]
 },
 en: {
   app: 'Secret Santa',
-  lead: 'Gather your group, run the draw and send everyone a personal link with their match.',
+  lead: 'Add your friends’ names, run the draw and send everyone their personal link.',
   howto: 'How to play?', langBtn: 'RU', langAria: 'Переключить на русский',
-  fTitle: 'Name', budget: 'Budget', phBudget: n => `up to ${n}`, cur: 'Currency', date: 'Gift swap date', org: 'Organizer',
-  calPick: 'Choose', calTitle: 'When do we swap gifts?', calNone: 'No date', calDone: 'Done', calPrev: 'Previous month', calNext: 'Next month',
+  fTitle: 'Name', budget: 'Budget', phBudget: n => `up to ${n}`, cur: 'Currency', date: 'Gift day', org: 'Organizer',
+  calPick: 'Choose', calTitle: 'When do we give gifts?', calNone: 'No date', calDone: 'Done', calPrev: 'Previous month', calNext: 'Next month',
   months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
   wdays: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
   holidays: { '12-24': '🎄', '12-25': '🎁', '12-31': '🎆', '01-01': '🎆' },
-  people: 'Participants', phName: 'Names, comma-separated', add: 'Add',
-  needMore: 'You need at least 3 participants.',
-  meNote: '★ is you. Mark yourself: you will find your match on your tag, like everyone else.',
+  people: 'Participants', phName: 'A name, or several comma-separated', add: 'Add',
+  needMore: 'Add at least three people.',
+  meNote: 'If you are playing too, tap ☆ next to your name. You will find out who you give to from your own tag, like everyone else.',
   meLabel: 'This is me', del: 'Remove',
   rules: 'Rules',
-  noMutual: 'No mutual pairs', noMutualSub: 'If Anna gives to Ben, Ben will not give to Anna.',
-  exTitle: 'Should not be matched', exNote: 'For example, couples or people who exchange gifts anyway.',
+  noMutual: 'No gifting each other', noMutualSub: 'If Anna gives to Ben, Ben gives to someone else.',
+  exTitle: 'Who should not give to each other', exNote: 'For example, couples or people who exchange gifts anyway.',
   pick: 'Select', and: 'and',
-  draw: '🎁 Run the draw', drawShort: '🎁 Draw',
+  draw: '🎁 Run the draw',
   dup: n => `“${n}” is already on the list. Add a surname or an initial.`,
   tooMany: `Up to ${LIMITS.people} participants.`,
-  fail: 'Could not find a valid draw. Remove some rules or turn off “No mutual pairs”.',
+  fail: 'The gifts cannot be shared out with these rules. Remove some exceptions or turn off “No gifting each other”.',
   tooLong: 'The name or the participant names are too long for a link. Shorten them.',
   mineCap: 'My tags',
   resTitle: 'Done!',
-  resLead: 'Send each person their own link in a private message. Not in the group chat: the link shows the match.',
+  resLead: 'Now send each person their link. Only in a private message, not in the group chat: the link shows who they give to.',
   sent: (a, b) => `Sent ${a} of ${b}`,
-  send: 'Send', copy: 'Link', mine: 'My match', sentMark: 'Sent mark',
-  markHint: 'The circle on the left marks a link as sent. You can untick it.',
+  send: 'Send', copy: 'Copy link', mine: 'My tag', sentMark: 'Sent mark',
+  markHint: 'The tick appears by itself once you send a link. Tap the circle to set or clear it.',
   copied: 'Link copied', copyFail: 'Could not copy',
   allSent: 'All links are sent! 🎉',
   codeLbl: 'Code',
-  codeNote: c => `This draw’s code is ${c}, and it is on everyone’s tag. If you run the draw again, the code changes, so old links are easy to tell apart.`,
-  newCode: c => `New draw, code ${c}. Send the links again.`,
-  redo: 'Run the draw again',
-  redoAsk: 'Links you already sent will keep showing the old matches: they cannot be revoked. You will need to send new links to everyone. Continue?',
-  restart: 'Edit participants',
-  restartAsk: 'The draw result will be removed from this device; the participant list stays for editing. Links already sent will keep working. Continue?',
+  codeNote: c => `Code ${c} marks this draw. It is on everyone’s tag.`,
+  newGame: 'New game',
+  newGameAsk: 'Start a new game? This draw and the participant list will be removed from this device. Links you already sent will keep working.',
   back: 'Back',
   shareText: (ti, n) => `🎅 ${ti}. ${n}, this is your personal link: open it to find out who you are giving a gift to. Please do not forward it!`,
   hi: n => `${n},`, tapTag: 'Tap the tag to see who you are giving a gift to',
   youGive: 'You are giving a gift to', secret: 'It is a secret. Tap again to hide it.',
   secretNote: '🤫 Do not show or forward this link to anyone.',
-  own: 'Organize your own draw',
+  own: 'Start your own game',
   badTitle: 'The link did not open', badText: 'It may have been copied only partly. Ask the organizer to send it again.',
   tagLabel: 'Gift tag', credit: 'Santa by pzUH, CC0 (OpenGameArt)',
   loading: 'Unpacking the gifts…',
-  skip: 'Skip', next: 'Next', prev: 'Back', start: 'Let’s go! 🎄',
+  skip: 'Skip', next: 'Next', prev: 'Back', start: 'Let’s go! 🎄', tourDone: 'Got it',
   slides: [
     { art: 'hello', title: 'How Secret Santa works',
       text: 'Each participant secretly gives a gift to one person in the group. The draw decides who gives to whom, and only the giver knows. No sign-up: it all works right inside Telegram.' },
-    { art: 'company', title: 'Step 1. Gather your group',
-      text: 'Name, budget with currency (₽, Br, ₸, $, €) and date are optional. Everyone will see them on their tag.',
-      legend: [['add', 'Adds the names you typed. Several at once, comma-separated'], ['star', 'This is you. You will find your match on your tag, like everyone else'], ['x', 'Removes a participant']] },
+    { art: 'company', title: 'Step 1. Add the participants',
+      text: 'Name, budget and date are optional. If you fill them in, everyone will see them on their tag.',
+      legend: [['add', 'Adds a name. You can type several at once, comma-separated'], ['star', 'Mark yourself if you are playing too'], ['x', 'Removes a person from the list']] },
     { art: 'rules', title: 'Step 2. Rules',
-      legend: [['sw', 'No mutual pairs: if Anna gives to Ben, Ben will not give to Anna'], ['add', 'Two people who must not be matched, such as a couple. Shows up from 4 participants']] },
-    { art: 'send', title: 'Step 3. Draw and send',
-      legend: [['draw', 'Picks random matches'], ['send', 'Opens Telegram: pick the private chat with this person'], ['copy', 'Copies the link to send it anywhere'], ['chk', 'Link sent. Tap to untick'], ['mine', 'Your own tag']] },
-    { art: 'tag', title: 'Step 4. Open the tag',
-      text: 'Each participant opens their link and taps the tag to see who they are giving a gift to. Do not forward the link: it shows the match. The code on the tag tells which draw it belongs to.' }
+      legend: [['sw', 'No gifting each other: if Anna gives to Ben, Ben gives to someone else'], ['add', 'Two people who must not give to each other, such as a couple. Shows up from 4 participants']] },
+    { art: 'send', title: 'Step 3. Draw and links',
+      text: 'Tap “Run the draw” at the bottom of the screen. You will see the participant list, each with their own link. Send it to that person in a private message. We will show what each button does right on that screen.' },
+    { art: 'tag', title: 'Step 4. The tag',
+      text: 'Each participant opens their link and taps the tag to see who they are giving a gift to. Do not forward the link: it shows who gives to whom.' }
+  ],
+  tour: [
+    ['Send', 'Opens Telegram. Pick the private chat with this person and the link goes to them.'],
+    ['📋 Copy', 'Copies the link if you would rather send it through another messenger or by email.'],
+    ['“Sent” tick', 'Shows who already has their link. It appears by itself, and you can tap to set or clear it.'],
+    ['My tag', 'Your own link. Open it to see who you are giving a gift to.'],
+    ['How many are sent', 'The bar fills up as you send the links. The code marks this draw and is on everyone’s tag.'],
+    ['New game', 'Removes this draw and opens a clean screen for a new group. Links you already sent will keep working.']
   ]
 }
 };
@@ -527,12 +558,7 @@ const CHIPS = {
   add: () => `<span class="pill mint">${esc(t.add)}</span>`,
   star: () => `<span class="star on">★</span>`,
   x: () => `<span class="x">×</span>`,
-  sw: () => `<span class="sw on"><i></i></span>`,
-  draw: () => `<span class="pill">${esc(t.drawShort)}</span>`,
-  send: () => `<span class="pill">${esc(t.send)}</span>`,
-  copy: () => `<span class="pill soft">${esc(t.copy)}</span>`,
-  chk: () => `<span class="chk on">✓</span>`,
-  mine: () => `<span class="pill gold">${esc(t.mine)}</span>`
+  sw: () => `<span class="sw on"><i></i></span>`
 };
 function garlandSVG() {
   const n = 14, w = 400, cols = ['#ff3d5a', '#ffc83d', '#12b886', '#4fc3ff', '#b28cff'];
@@ -759,6 +785,7 @@ function dropJSON(name) {
 /* ───────────── состояние ───────────── */
 const state = {
   screen: 'loading', err: '', focus: null, intro: null, introSeen: false, cal: null, cheer: false,
+  tour: null, tourSeen: false,   // tour: { steps: номера шагов TOUR, k: текущий }
   title: '', budget: '', cur: DEFAULT_CUR, date: '', people: [], me: -1, excl: [], noMutual: true, pick1: '', pick2: '',
   draw: null,     // { title, code, me, cfg, items: [{ name, payload, sent }] }
   mine: [],       // сохранённые личные ссылки, которые я получил
@@ -812,7 +839,8 @@ function applyMine(m) {
 }
 function remember(payload) {
   const info = decodePair(payload); if (!info) return;
-  state.mine = [payload].concat(state.mine.filter(q => { const d = decodePair(q); return d && !(d.title === info.title && d.from === info.from); })).slice(0, 5);
+  // один человек может играть в нескольких компаниях: заменяем только бирку той же игры (то же название, имя и организатор)
+  state.mine = [payload].concat(state.mine.filter(q => { const d = decodePair(q); return d && !(d.title === info.title && d.from === info.from && d.org === info.org); })).slice(0, 5);
   saveJSON('mine', state.mine);
 }
 
@@ -832,7 +860,7 @@ function viewSetup() {
     `<div class="row"><span class="nm">${esc(s.people[a])} ${esc(t.and)} ${esc(s.people[b])}</span><button class="x" data-act="delx" data-i="${k}" aria-label="${esc(t.del)}">×</button></div>`).join('');
   const mineRows = s.mine.map((p, i) => {
     const d = decodePair(p);
-    return d ? `<button class="row link" data-act="openmine" data-i="${i}"><span class="nm">🏷️ ${esc(d.title)}</span><span class="hint">${esc(d.from)}</span></button>` : '';
+    return d ? `<button class="row link" data-act="openmine" data-i="${i}"><span class="nm">🏷️ ${esc(d.title)}</span><span class="hint">${esc(d.date ? shortDate(d.date) : d.org || d.from)}</span></button>` : '';
   }).join('');
   const showEx = n >= 4 || s.excl.length > 0;
   return `
@@ -884,7 +912,7 @@ const langBtn = () => `<button class="howto" data-act="switchLang" aria-label="$
 function syncMainButton() {
   if (!MB) return;
   try {
-    if (state.screen === 'setup' && state.intro == null && !state.cal) {
+    if (state.screen === 'setup' && state.intro == null && !state.cal && !state.tour) {
       MB.setParams({ text: t.draw, color: '#ff3d5a', text_color: '#ffffff', is_active: true, is_visible: true, has_shine_effect: true });
     } else MB.hide();
   } catch (e) {}
@@ -901,7 +929,7 @@ function viewResult() {
       <span class="nm">${d.me === i ? '★ ' : ''}${esc(it.name)}</span>
       ${d.me === i
         ? `<button class="pill gold" data-act="mine" data-i="${i}">${esc(t.mine)}</button>`
-        : `<button class="pill" data-act="send" data-i="${i}">${esc(t.send)}</button><button class="pill soft" data-act="copy" data-i="${i}">${esc(t.copy)}</button>`}
+        : `<button class="pill" data-act="send" data-i="${i}">${esc(t.send)}</button><button class="pill soft ic" data-act="copy" data-i="${i}" aria-label="${esc(t.copy)}: ${esc(it.name)}">📋</button>`}
     </div>`).join('');
   return `
   <div class="wrap plain">
@@ -922,8 +950,7 @@ function viewResult() {
     <div class="sect">${rows}</div>
     <p class="note">${esc(t.markHint)}${d.code ? ' ' + esc(t.codeNote(d.code)) : ''}</p>
     <div class="stack">
-      <button class="btn ghost" data-act="redo">🎲 ${esc(t.redo)}</button>
-      <button class="btn ghost" data-act="restart">✏️ ${esc(t.restart)}</button>
+      <button class="btn ghost" data-act="newGame">🎄 ${esc(t.newGame)}</button>
     </div>
   </div>`;
 }
@@ -1029,7 +1056,61 @@ function viewCal() {
   </div>`;
 }
 
+/* Подсказки поверх экрана результата. el() находит кнопку, о которой рассказывает шаг;
+   тексты — t.tour в том же порядке. Шаги, для которых кнопки нет (например, «Моя бирка»), пропускаются. */
+const TOUR = [
+  { el: () => $('[data-act="send"]') },
+  { el: () => $('[data-act="copy"]') },
+  { el: () => { const b = $('[data-act="send"]'); return b && $('.chk', b.closest('.row')); } },
+  { el: () => $('[data-act="mine"]') },
+  { el: () => $('.prog') },
+  { el: () => $('[data-act="newGame"]') }
+];
+const CLIP_PATH = (() => { try { return CSS.supports('clip-path', 'path(evenodd, "M0 0H1V1Z")'); } catch (e) { return false; } })();
+function viewTour() {
+  return `
+  <div class="tour enter${CLIP_PATH ? '' : ' flat'}" role="dialog" aria-modal="true" aria-labelledby="tourT">
+    <div class="tv" data-act="tourNext"></div>
+    <div class="tour-ring" data-act="tourNext"></div>
+    <div class="tour-tip">
+      <span class="tour-arr"></span>
+      <div class="tour-body"></div>
+      <div class="tour-nav"><button class="skip" data-act="tourClose">${esc(t.skip)}</button><button class="pill" id="tourNext" data-act="tourNext"></button></div>
+    </div>
+  </div>`;
+}
+/* Двигает «окошко» и подсказку к кнопке текущего шага. Сам слой не перерисовывается, поэтому переход плавный. */
+function placeTour() {
+  const box = $('.tour'), tr = state.tour; if (!box || !tr) return;
+  const i = tr.steps[tr.k], el = TOUR[i].el();
+  if (!el) { actions.tourClose(); return; }
+  el.scrollIntoView({ block: 'center' });
+  const W = document.documentElement.clientWidth, H = innerHeight, pad = 6, r = el.getBoundingClientRect();
+  const x0 = Math.max(0, r.left - pad), y0 = Math.max(0, r.top - pad), x1 = Math.min(W, r.right + pad), y1 = Math.min(H, r.bottom + pad);
+  // вырез в размытом слое повторяет форму кнопки: прямоугольник со скруглёнными углами
+  const br = getComputedStyle(el).borderTopLeftRadius;
+  const rr = Math.min((x1 - x0) / 2, (y1 - y0) / 2, br.includes('%') ? Infinity : (parseFloat(br) || 8) + pad);
+  const ring = $('.tour-ring', box);
+  Object.assign(ring.style, { left: x0 + 'px', top: y0 + 'px', width: x1 - x0 + 'px', height: y1 - y0 + 'px', borderRadius: rr + 'px' });
+  const a = `A${rr} ${rr} 0 0 1`;
+  $('.tv', box).style.clipPath = `path(evenodd, "M0 0H${W}V${H}H0Z M${x0 + rr} ${y0}H${x1 - rr}${a} ${x1} ${y0 + rr}V${y1 - rr}${a} ${x1 - rr} ${y1}H${x0 + rr}${a} ${x0} ${y1 - rr}V${y0 + rr}${a} ${x0 + rr} ${y0}Z")`;
+  const [title, text] = t.tour[i], last = tr.k === tr.steps.length - 1;
+  $('.tour-body', box).innerHTML = `<div class="tour-n">${tr.k + 1} / ${tr.steps.length}</div><h3 id="tourT" tabindex="-1">${esc(title)}</h3><p>${esc(text)}</p>`;
+  $('#tourNext', box).textContent = last ? t.tourDone : t.next;
+  $('.skip', box).style.visibility = last ? 'hidden' : '';
+  // подсказка под кнопкой, а если снизу мало места — над ней; стрелка смотрит на кнопку
+  const tip = $('.tour-tip', box), tw = tip.offsetWidth, th = tip.offsetHeight, gap = 14;
+  const below = H - y1 >= th + gap + 8 || H - y1 >= y0;
+  const cx = (x0 + x1) / 2, left = Math.min(W - 16 - tw, Math.max(16, cx - tw / 2));
+  tip.classList.toggle('up', !below);
+  tip.style.left = left + 'px';
+  tip.style.top = Math.max(8, Math.min(H - th - 8, below ? y1 + gap : y0 - gap - th)) + 'px';
+  $('.tour-arr', tip).style.left = Math.min(tw - 24, Math.max(10, cx - left - 7)) + 'px';
+  $('#tourT', box).focus({ preventScroll: true });
+}
+
 function backTarget() {
+  if (state.tour) return () => actions.tourPrev();
   if (state.cal) return () => actions.calClose();
   if (state.intro != null) return () => (state.intro > 0 ? actions.introPrev() : actions.introClose());
   if (state.screen === 'reveal' && state.view && state.view.back) {
@@ -1041,11 +1122,12 @@ function backTarget() {
 function render() {
   const view = { loading: viewLoading, setup: viewSetup, result: viewResult, reveal: viewReveal, bad: viewBad }[state.screen];
   const nn = $('#newName'), typed = nn ? nn.value : '';   // недописанное имя не должно пропадать при перерисовке
-  app.innerHTML = view() + (state.intro != null ? viewIntro() : '') + (state.cal ? viewCal() : '');
-  document.body.classList.toggle('lock', state.intro != null || !!state.cal);
+  app.innerHTML = view() + (state.intro != null ? viewIntro() : '') + (state.cal ? viewCal() : '') + (state.tour ? viewTour() : '');
+  document.body.classList.toggle('lock', state.intro != null || !!state.cal || !!state.tour);
   if (typed) { const el = $('#newName'); if (el) el.value = typed; }
   if (ver('6.1')) { try { backTarget() ? tg.BackButton.show() : tg.BackButton.hide(); } catch (e) {} }
   if (state.focus) { const el = $(state.focus); if (el) el.focus({ preventScroll: true }); state.focus = null; }
+  if (state.tour) placeTour();
   syncMainButton();
 }
 
@@ -1146,6 +1228,8 @@ const actions = {
     if (r.err) { showErr(r.err); return; }
     state.err = ''; state.draw = r.draw; saveJSON('draw', state.draw); saveDraftSoon();
     state.screen = 'result'; state.cheer = true; hap.ok(); render(); window.scrollTo(0, 0); cheer();
+    // в первый раз показываем, что делает каждая кнопка, когда конфетти уже осыпалось
+    if (!state.tourSeen) setTimeout(() => { if (state.screen === 'result' && !state.tour && state.intro == null) actions.tour(); }, 1400);
   },
   toggle(i) { setSent(i, !state.draw.items[i].sent); },
   send(i) {
@@ -1170,20 +1254,34 @@ const actions = {
     state.view = { info, back: 'setup', open: false, seen: false };
     state.screen = 'reveal'; render(); window.scrollTo(0, 0);
   },
-  redo() {
-    ask(t.redoAsk, () => {
-      const r = runDraw(state.draw.cfg);
-      if (r.err) { toast(r.err); hap.err(); return; }
-      state.draw = r.draw; saveJSON('draw', state.draw); state.cheer = true; hap.ok(); render(); window.scrollTo(0, 0);
-      cheer(); toast(t.newCode(r.draw.code));
+  newGame() {   // чистый первый экран; «Мои бирки» остаются: это ссылки из чужих игр
+    ask(t.newGameAsk, () => {
+      state.draw = null; dropJSON('draw');
+      Object.assign(state, { title: '', budget: '', cur: DEFAULT_CUR, date: '', people: [], me: -1, excl: [], noMutual: true, pick1: '', pick2: '', err: '' });
+      applyDraft(null);   // своё имя из Telegram сразу в списке
+      saveDraftSoon(); hap.tap();
+      state.screen = 'setup'; render(); window.scrollTo(0, 0);
     });
   },
-  restart() {
-    ask(t.restartAsk, () => {
-      if (state.draw && state.draw.cfg) Object.assign(state, sanitizeCfg(state.draw.cfg));   // правим именно тот список, по которому была жеребьёвка
-      state.draw = null; dropJSON('draw'); saveDraftSoon();
-      state.screen = 'setup'; state.err = ''; render(); window.scrollTo(0, 0);
-    });
+  tour() {
+    const steps = TOUR.map((_, i) => i).filter(i => TOUR[i].el());
+    if (!steps.length) return;
+    state.tour = { steps, k: 0 }; render();
+  },
+  tourNext() {
+    if (!state.tour) return;
+    if (state.tour.k >= state.tour.steps.length - 1) { actions.tourClose(); return; }
+    state.tour.k++; hap.tap(); placeTour();
+  },
+  tourPrev() {
+    if (!state.tour) return;
+    if (state.tour.k > 0) { state.tour.k--; hap.tap(); placeTour(); } else actions.tourClose();
+  },
+  tourClose() {
+    if (!state.tour) return;
+    state.tour = null;
+    if (!state.tourSeen) { state.tourSeen = true; saveJSON('tour', 1); }
+    render();
   },
   flip() {
     const tag = $('.tag'); if (!tag) return;
@@ -1216,7 +1314,10 @@ const actions = {
   },
   calClear() { state.date = ''; state.cal = null; hap.tap(); saveDraftSoon(); render(); },
   calClose() { state.cal = null; render(); },
-  help() { state.intro = 0; state.focus = '#introT'; render(); },
+  help() {
+    if (state.screen === 'result') { actions.tour(); return; }   // на экране результата объясняем прямо на кнопках
+    state.intro = 0; state.focus = '#introT'; render();
+  },
   introNext() {
     if (state.intro == null) return;
     if (state.intro >= t.slides.length - 1) { actions.introClose(); return; }
@@ -1240,12 +1341,19 @@ app.addEventListener('keydown', e => {
   else if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('tag')) { e.preventDefault(); actions.flip(); }
 });
 document.addEventListener('keydown', e => {
+  if (state.tour) {
+    if (e.key === 'Escape') { e.preventDefault(); actions.tourClose(); }
+    else if (e.key === 'ArrowRight') actions.tourNext();
+    else if (e.key === 'ArrowLeft') actions.tourPrev();
+    return;
+  }
   if (state.cal && e.key === 'Escape') { e.preventDefault(); actions.calClose(); return; }
   if (state.intro == null) return;
   if (e.key === 'Escape') { e.preventDefault(); actions.introClose(); }
   else if (e.key === 'ArrowRight') actions.introNext();
   else if (e.key === 'ArrowLeft') actions.introPrev();
 });
+addEventListener('resize', () => { if (state.tour) placeTour(); });   // поворот экрана, разворачивание Telegram
 let swipe = null;   // листание пальцем: слайды обучения и месяцы календаря
 app.addEventListener('touchstart', e => {
   const where = e.target.closest('.intro') ? 'intro' : e.target.closest('.cal-days, .cal-head') ? 'cal' : null;
@@ -1304,8 +1412,8 @@ async function boot() {
     else state.screen = 'bad';
   }
   render();
-  const [draft, draw, mine, intro] = await Promise.all([loadJSON('draft'), loadJSON('draw'), loadJSON('mine'), loadJSON('intro')]);
-  applyDraft(draft); applyDraw(draw); applyMine(mine); state.introSeen = intro === 1;
+  const [draft, draw, mine, intro, tour] = await Promise.all([loadJSON('draft'), loadJSON('draw'), loadJSON('mine'), loadJSON('intro'), loadJSON('tour')]);
+  applyDraft(draft); applyDraw(draw); applyMine(mine); state.introSeen = intro === 1; state.tourSeen = tour === 1;
   if (p && state.view) remember(p);
   if (!p) {
     state.screen = state.draw ? 'result' : 'setup';
