@@ -160,6 +160,7 @@ input,select{scroll-margin:120px 0}
 
 /* ── прогресс рассылки ── */
 .prog{background:var(--card);color:var(--text);border-radius:18px;padding:14px 16px;margin-top:14px;box-shadow:0 10px 26px rgba(4,8,40,.35)}
+.cap+.prog{margin-top:0}
 .prog-top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:14px}
 .prog-top b{font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .track{height:10px;border-radius:5px;background:var(--field);margin-top:12px;overflow:hidden}
@@ -363,7 +364,7 @@ ru: {
   tooMany: `Можно не больше ${LIMITS.people} участников.`,
   fail: 'С такими условиями распределить подарки не получается. Уберите часть исключений или выключите «Без подарков друг другу».',
   tooLong: 'Название или имена слишком длинные, ссылка не помещается. Сократите их.',
-  mineCap: 'Мои бирки',
+  mineCap: 'Мои бирки — кому дарю я', orgCap: 'Я организатор',
   resTitle: 'Готово!',
   resLead: 'Теперь отправьте каждому его ссылку. Только в личные сообщения, не в общий чат: по ссылке видно, кому человек дарит подарок.',
   sent: (a, b) => `Отправлено ${a} из ${b}`,
@@ -430,7 +431,7 @@ en: {
   tooMany: `Up to ${LIMITS.people} participants.`,
   fail: 'The gifts cannot be shared out with these rules. Remove some exceptions or turn off “No gifting each other”.',
   tooLong: 'The name or the participant names are too long for a link. Shorten them.',
-  mineCap: 'My tags',
+  mineCap: 'My tags — who I give to', orgCap: 'I am organizing',
   resTitle: 'Done!',
   resLead: 'Now send each person their link. Only in a private message, not in the group chat: the link shows who they give to.',
   sent: (a, b) => `Sent ${a} of ${b}`,
@@ -858,10 +859,6 @@ function viewSetup() {
     s.people.map((p, i) => `<option value="${i}"${String(v) === String(i) ? ' selected' : ''}>${esc(p)}</option>`).join('');
   const exRows = s.excl.map(([a, b], k) =>
     `<div class="row"><span class="nm">${esc(s.people[a])} ${esc(t.and)} ${esc(s.people[b])}</span><button class="x" data-act="delx" data-i="${k}" aria-label="${esc(t.del)}">×</button></div>`).join('');
-  const mineRows = s.mine.map((p, i) => {
-    const d = decodePair(p);
-    return d ? `<button class="row link" data-act="openmine" data-i="${i}"><span class="nm">🏷️ ${esc(d.title)}</span><span class="hint">${esc(d.date ? shortDate(d.date) : d.org || d.from)}</span></button>` : '';
-  }).join('');
   const showEx = n >= 4 || s.excl.length > 0;
   return `
   <div class="wrap">
@@ -873,7 +870,7 @@ function viewSetup() {
         <div class="hero-btns"><button class="howto" data-act="help">❓ ${esc(t.howto)}</button>${langBtn()}</div>
       </div>
     </div>
-    ${mineRows ? `<div class="cap"><span>${esc(t.mineCap)}</span></div><div class="sect">${mineRows}</div>` : ''}
+    ${mineBlock()}
 
     <div class="cap"><span>🎄 ${esc(t.app)}</span></div>
     <div class="sect">
@@ -905,6 +902,15 @@ function viewSetup() {
     <p class="credit">${esc(t.credit)}</p>
   </div>
   ${MB ? '' : `<div class="bar"><div><button class="btn shine" data-act="draw">${esc(t.draw)}</button></div></div>`}`;
+}
+/* Бирки, которые я получил (в том числе своя из прошлых жеребьёвок). Видны и на первом экране, и на экране результата.
+   skip — бирка текущей жеребьёвки: на экране результата она уже есть в списке кнопкой «Моя бирка». */
+function mineBlock(skip) {
+  const rows = state.mine.map((p, i) => {
+    const d = p !== skip && decodePair(p);
+    return d ? `<button class="row link" data-act="openmine" data-i="${i}"><span class="nm">🏷️ ${esc(d.title)}</span><span class="hint">${esc(d.date ? shortDate(d.date) : d.org || d.from)} ›</span></button>` : '';
+  }).join('');
+  return rows ? `<div class="cap"><span>${esc(t.mineCap)}</span></div><div class="sect">${rows}</div>` : '';
 }
 const langBtn = () => `<button class="howto" data-act="switchLang" aria-label="${esc(t.langAria)}">🌐 ${esc(t.langBtn)}</button>`;
 /* В Telegram главная кнопка — родная (MainButton): её двигает сам Telegram вместе с клавиатурой,
@@ -941,6 +947,8 @@ function viewResult() {
         <div class="hero-btns"><button class="howto" data-act="help">❓ ${esc(t.howto)}</button>${langBtn()}</div>
       </div>
     </div>
+    ${mineBlock(d.me >= 0 && d.items[d.me] ? d.items[d.me].payload : null)}
+    <div class="cap"><span>${esc(t.orgCap)}</span></div>
     <div class="prog">
       <div class="prog-top"><b>${esc(d.title)}</b>${d.code ? `<span>${esc(t.codeLbl)} <span class="code">${esc(d.code)}</span></span>` : ''}</div>
       <div class="track"><i style="width:${pct}%"></i></div>
@@ -1129,6 +1137,15 @@ function render() {
   if (state.focus) { const el = $(state.focus); if (el) el.focus({ preventScroll: true }); state.focus = null; }
   if (state.tour) placeTour();
   syncMainButton();
+  tourOnFirstVisit();
+}
+/* Первый раз на экране результата (как бы туда ни попали) показываем, что делает каждая кнопка.
+   Небольшая пауза: после жеребьёвки успевают осыпаться конфетти. */
+let tourTimer = 0;
+const tourReady = () => state.screen === 'result' && !state.tourSeen && !state.tour && state.intro == null && !state.cal;
+function tourOnFirstVisit() {
+  if (tourTimer || !tourReady()) return;
+  tourTimer = setTimeout(() => { tourTimer = 0; if (tourReady()) actions.tour(); }, 1200);
 }
 
 /* ───────────── действия ───────────── */
@@ -1227,9 +1244,8 @@ const actions = {
     const r = runDraw(currentCfg());
     if (r.err) { showErr(r.err); return; }
     state.err = ''; state.draw = r.draw; saveJSON('draw', state.draw); saveDraftSoon();
+    if (r.draw.me >= 0) remember(r.draw.items[r.draw.me].payload);   // своя бирка не пропадёт и после «Новой игры»
     state.screen = 'result'; state.cheer = true; hap.ok(); render(); window.scrollTo(0, 0); cheer();
-    // в первый раз показываем, что делает каждая кнопка, когда конфетти уже осыпалось
-    if (!state.tourSeen) setTimeout(() => { if (state.screen === 'result' && !state.tour && state.intro == null) actions.tour(); }, 1400);
   },
   toggle(i) { setSent(i, !state.draw.items[i].sent); },
   send(i) {
@@ -1251,7 +1267,7 @@ const actions = {
   },
   openmine(i) {
     const info = decodePair(state.mine[i]); if (!info) return;
-    state.view = { info, back: 'setup', open: false, seen: false };
+    state.view = { info, back: state.screen, open: false, seen: false };
     state.screen = 'reveal'; render(); window.scrollTo(0, 0);
   },
   newGame() {   // чистый первый экран; «Мои бирки» остаются: это ссылки из чужих игр
