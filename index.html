@@ -85,7 +85,6 @@ h1.c,.c{text-align:center}
 .hop:nth-child(2){animation-delay:.3s}.hop:nth-child(3){animation-delay:.6s}.hop:nth-child(4){animation-delay:.9s}
 @keyframes hop{0%,70%,100%{transform:translateY(0)}80%{transform:translateY(-10px) rotate(-6deg)}90%{transform:translateY(0) rotate(3deg)}}
 .pile{display:flex;justify-content:center;align-items:flex-end;gap:2px}
-.stage-foot{display:flex;justify-content:center;align-items:flex-end;gap:6px}
 
 /* ── шапка ── */
 .hero{position:relative;display:flex;align-items:center;gap:14px;padding:14px 14px 14px 16px;border-radius:24px;color:#fff;
@@ -168,28 +167,62 @@ input,select{scroll-margin:120px 0}
 .prog-sub{margin-top:8px;font-size:13px;color:var(--hint)}
 .code{display:inline-block;font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;letter-spacing:.12em;background:#fff3cf;color:#6b4b00;border-radius:8px;padding:2px 8px}
 
-/* ── бирка ── */
-.stage{display:flex;justify-content:center;padding:72px 0 26px}
-.tag{--tw:min(250px,68vw);--shape:polygon(26% 0,74% 0,100% 12%,100% 100%,0 100%,0 12%);
-  position:relative;width:var(--tw);height:calc(var(--tw)*1.28);cursor:pointer;
-  transform-origin:50% -72px;animation:sway 2.4s ease-out both;-webkit-user-select:none;user-select:none}
-@keyframes sway{0%{transform:rotate(-8deg)}22%{transform:rotate(5deg)}46%{transform:rotate(-3deg)}70%{transform:rotate(1.5deg)}100%{transform:rotate(0)}}
-.shw{position:absolute;inset:0;transform:translateY(14px);filter:blur(10px);opacity:.4}
+/* ── подарок: держишь палец — коробка трясётся, крышка отлетает, из коробки выезжает бирка ──
+   --p — сколько уже продержали палец, от 0 до 1. Классы на .gstage: holding — держат, open — открыт, anim — открыли только что. */
+.gstage{--p:0;margin-top:10px}
+.unbox{position:relative;width:min(300px,84vw);aspect-ratio:300/365;margin:0 auto;cursor:pointer;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none}
+.gstage.open .unbox{cursor:default;touch-action:auto}
+.unbox:focus-visible{outline-offset:6px;border-radius:24px}
+.gift-hi{position:absolute;left:0;right:0;top:0;text-align:center;transition:opacity .3s,visibility .3s}
+.gift-hi .hand{font-size:46px}
+.gift-hi p{margin:4px 14px 0;color:var(--dim);font-size:15px}
+.gstage.open .gift-hi{opacity:0;visibility:hidden}
+.rays{position:absolute;left:50%;top:35%;width:150%;aspect-ratio:1;transform:translate(-50%,-50%);opacity:0;pointer-events:none;
+  -webkit-mask-image:radial-gradient(circle,#000 16%,transparent 66%);mask-image:radial-gradient(circle,#000 16%,transparent 66%)}
+.rays::before{content:"";position:absolute;inset:0;border-radius:50%;background:repeating-conic-gradient(rgba(255,215,110,.34) 0 8deg,transparent 8deg 20deg);animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(1turn)}}
+.gstage.open .rays{opacity:1}
+.glow{position:absolute;left:0;right:0;bottom:-6%;aspect-ratio:1;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,200,61,.6),transparent 60%);opacity:calc(.2 + var(--p) * .8);transform:scale(calc(.55 + var(--p) * .5))}
+.gshadow{position:absolute;left:12%;right:12%;bottom:0;height:6%;border-radius:50%;background:rgba(0,0,0,.4);filter:blur(6px)}
+.gbox{position:absolute;left:13%;width:74%;bottom:2.7%;aspect-ratio:200/120;transform-origin:50% 100%}
+.gbody{position:absolute;inset:0;display:block;width:100%;height:100%}
+.glid{position:absolute;left:-5%;width:110%;bottom:86%;display:block;transform-origin:50% 100%;
+  transform:translateY(calc(var(--p) * -12%)) rotate(calc(var(--p) * -5deg))}
+.gstage.holding .gbox{animation:shake .12s linear infinite}
+@keyframes shake{25%{transform:rotate(calc(var(--p) * -5deg)) translateX(calc(var(--p) * -3px))}75%{transform:rotate(calc(var(--p) * 5deg)) translateX(calc(var(--p) * 3px))}}
+.gstage.open .glid{opacity:0;visibility:hidden}
+.spark{position:absolute;color:#ffe08a;font-size:18px;line-height:1;pointer-events:none;text-shadow:0 0 8px rgba(255,200,61,.8);animation:tw 1.6s ease-in-out infinite}
+.reveal-santa{position:absolute;left:-8%;bottom:0;z-index:2}
+.unbox .gift.side{position:absolute;right:-3%;bottom:0;width:52px;height:52px}
+/* бирка внутри коробки: сначала маленькая и спрятана за передней стенкой */
+.gtag{--shape:polygon(26% 0,74% 0,100% 12%,100% 100%,0 100%,0 12%);position:absolute;left:18%;width:64%;bottom:31%;aspect-ratio:1/1.28;
+  transform-origin:50% 100%;transform:translateY(22%) scale(.3);visibility:hidden;cursor:pointer}
+.gstage.open .gtag{transform:none;visibility:visible}
+.shw{position:absolute;inset:0;transform:translateY(12px);filter:blur(10px);opacity:.45}
 .shade{position:absolute;inset:0;background:#000;-webkit-clip-path:var(--shape);clip-path:var(--shape)}
-.face{position:absolute;inset:0;background:var(--kraft) linear-gradient(160deg,rgba(255,255,255,.24),rgba(0,0,0,.07));color:var(--ink);
-  -webkit-clip-path:var(--shape);clip-path:var(--shape);-webkit-backface-visibility:hidden;backface-visibility:hidden;
-  transition:transform .8s cubic-bezier(.25,.8,.25,1);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:62px 22px 24px}
-.front{transform:perspective(1100px) rotateY(0)}
-.back{transform:perspective(1100px) rotateY(-180deg)}
-.tag.open .front{transform:perspective(1100px) rotateY(180deg)}
-.tag.open .back{transform:perspective(1100px) rotateY(0)}
-.hole{position:absolute;left:50%;top:19px;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:#13215f;box-shadow:0 0 0 4px var(--kraft-dark)}
-.hand.to{font-size:46px;margin-bottom:6px}
-.hand.name{margin:10px 0 14px}
-.face p{margin:8px 0 0;font-size:15px;line-height:1.3}
-.face p.small{font-size:13px;opacity:.85}
-.string{position:absolute;left:50%;top:-72px;width:20px;height:104px;margin-left:-10px;pointer-events:none}
+.face{position:absolute;inset:0;background:var(--kraft) linear-gradient(160deg,rgba(255,255,255,.26),rgba(0,0,0,.08));color:var(--ink);
+  -webkit-clip-path:var(--shape);clip-path:var(--shape);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 14px 30%}
+.hole{position:absolute;left:50%;top:15px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:#13215f;box-shadow:0 0 0 4px var(--kraft-dark)}
+.hand.name{margin:8px 0 10px;transition:filter .3s}
+.gtag.hid .hand.name{filter:blur(12px)}
+.face p{margin:0;font-size:13px;line-height:1.3;opacity:.85}
+/* открытие */
+.gstage.anim .gbox{animation:boxPop .45s ease-out}
+@keyframes boxPop{30%{transform:scale(1.06,.9)}65%{transform:scale(.98,1.03)}}
+.gstage.anim .glid{animation:lidOff .8s cubic-bezier(.25,.7,.4,1) both}
+@keyframes lidOff{0%{transform:translateY(-12%) rotate(-5deg);opacity:1;visibility:visible}30%{transform:translateY(-80%) rotate(-12deg);opacity:1;visibility:visible}100%{transform:translate(70%,-330%) rotate(42deg);opacity:0;visibility:hidden}}
+.gstage.anim .gtag{animation:tagUp .9s .22s cubic-bezier(.2,.9,.3,1.25) both}
+@keyframes tagUp{from{transform:translateY(22%) scale(.3);visibility:visible}to{transform:none;visibility:visible}}
+.gstage.anim .rays{animation:fade .7s .3s both}
+.hold{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px;color:#fff;font-size:15px;font-weight:700;transition:opacity .3s,visibility .3s}
+.hold span:first-child{animation:nudge 1.6s ease-in-out infinite}
+@keyframes nudge{50%{transform:translateY(-3px)}}
+.hold-bar{width:170px;height:8px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden}
+.hold-bar i{display:block;height:100%;width:calc(var(--p) * 100%);border-radius:4px;background:linear-gradient(90deg,var(--gold),var(--red))}
+.gstage.open .hold{opacity:0;visibility:hidden}
 .secret{color:var(--dim);font-size:14px;text-align:center;margin:14px 8px 0}
 .cta{margin-top:18px;opacity:0;visibility:hidden;transition:opacity .4s .6s,visibility 0s .6s}
 .cta.on{opacity:1;visibility:visible}
@@ -378,8 +411,9 @@ ru: {
   newGameAsk: 'Начать новую игру? Эта жеребьёвка и список участников удалятся с этого устройства. Ссылки, которые вы уже отправили, продолжат работать.',
   back: 'Назад',
   shareText: (ti, n) => `🎅 ${ti}. ${n}, это твоя личная ссылка: открой её и узнаешь, кому даришь подарок. Никому её не пересылай!`,
-  hi: n => `${n},`, tapTag: 'Нажми на бирку, чтобы узнать, кому ты даришь подарок',
-  youGive: 'Кому ты даришь:', secret: 'Это секрет. Нажми ещё раз, чтобы скрыть.',
+  hi: n => `${n},`, giftIn: 'внутри имя того, кому ты даришь подарок',
+  holdHint: 'Нажми на подарок и держи', openGift: 'Открыть подарок',
+  youGive: 'Кому ты даришь:', secret: 'Нажми на бирку, чтобы спрятать имя', showName: 'Нажми, чтобы снова увидеть имя',
   secretNote: '🤫 Никому не показывай и не пересылай эту ссылку.',
   own: 'Устроить свою игру',
   badTitle: 'Ссылка не открылась', badText: 'Похоже, она скопировалась не целиком. Попросите организатора прислать её ещё раз.',
@@ -397,7 +431,7 @@ ru: {
     { art: 'send', title: 'Шаг 3. Жеребьёвка и ссылки',
       text: 'Нажмите «Провести жеребьёвку» внизу экрана. Появится список участников, у каждого своя ссылка. Отправьте её человеку в личные сообщения. Что делает каждая кнопка, покажем прямо на том экране.' },
     { art: 'tag', title: 'Шаг 4. Бирка',
-      text: 'Участник открывает свою ссылку и нажимает на бирку. Там написано, кому он дарит подарок. Пересылать ссылку нельзя: по ней видно, кто кому дарит.' }
+      text: 'Участник открывает свою ссылку, нажимает на подарок и держит палец, пока коробка не откроется. Внутри бирка с именем того, кому он дарит подарок. Пересылать ссылку нельзя: по ней видно, кто кому дарит.' }
   ],
   /* подсказки на экране результата, порядок как в TOUR */
   tour: [
@@ -445,8 +479,9 @@ en: {
   newGameAsk: 'Start a new game? This draw and the participant list will be removed from this device. Links you already sent will keep working.',
   back: 'Back',
   shareText: (ti, n) => `🎅 ${ti}. ${n}, this is your personal link: open it to find out who you are giving a gift to. Please do not forward it!`,
-  hi: n => `${n},`, tapTag: 'Tap the tag to see who you are giving a gift to',
-  youGive: 'You are giving a gift to', secret: 'It is a secret. Tap again to hide it.',
+  hi: n => `${n},`, giftIn: 'inside is the name of the person you are giving a gift to',
+  holdHint: 'Press and hold the gift', openGift: 'Open the gift',
+  youGive: 'You are giving a gift to', secret: 'Tap the tag to hide the name', showName: 'Tap to see the name again',
   secretNote: '🤫 Do not show or forward this link to anyone.',
   own: 'Start your own game',
   badTitle: 'The link did not open', badText: 'It may have been copied only partly. Ask the organizer to send it again.',
@@ -464,7 +499,7 @@ en: {
     { art: 'send', title: 'Step 3. Draw and links',
       text: 'Tap “Run the draw” at the bottom of the screen. You will see the participant list, each with their own link. Send it to that person in a private message. We will show what each button does right on that screen.' },
     { art: 'tag', title: 'Step 4. The tag',
-      text: 'Each participant opens their link and taps the tag to see who they are giving a gift to. Do not forward the link: it shows who gives to whom.' }
+      text: 'Each participant opens their link and holds a finger on the gift until the box opens. Inside is a tag with the name of the person they are giving a gift to. Do not forward the link: it shows who gives to whom.' }
   ],
   tour: [
     ['Send', 'Opens Telegram. Pick the private chat with this person and the link goes to them.'],
@@ -490,7 +525,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const clean = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
 const norm = s => clean(s).toLocaleLowerCase().replace(/ё/g, 'е');
 const hap = {
-  tap() { try { if (ver('6.1')) tg.HapticFeedback.impactOccurred('light'); } catch (e) {} },
+  tap(style = 'light') { try { if (ver('6.1')) tg.HapticFeedback.impactOccurred(style); } catch (e) {} },
   ok()  { try { if (ver('6.1')) tg.HapticFeedback.notificationOccurred('success'); } catch (e) {} },
   err() { try { if (ver('6.1')) tg.HapticFeedback.notificationOccurred('error'); } catch (e) {} }
 };
@@ -963,32 +998,55 @@ function viewResult() {
   </div>`;
 }
 
+/* Большой подарок: передняя стенка коробки и крышка с бантом — отдельные рисунки, чтобы крышка могла отлететь */
+const GIFT_BODY = `<svg class="gbody" viewBox="0 0 200 120" aria-hidden="true"><defs>
+<linearGradient id="gbB" x1="0" x2="1"><stop offset="0" stop-color="#ff5a73"/><stop offset=".55" stop-color="#ff3d5a"/><stop offset="1" stop-color="#d42246"/></linearGradient>
+<linearGradient id="gbL" x1="0" x2="1"><stop offset="0" stop-color="#ff7a90"/><stop offset=".55" stop-color="#ff4d68"/><stop offset="1" stop-color="#e12a4f"/></linearGradient>
+<linearGradient id="gbR" x1="0" x2="1"><stop offset="0" stop-color="#ffe9a3"/><stop offset=".45" stop-color="#ffc83d"/><stop offset="1" stop-color="#e9a400"/></linearGradient></defs>
+<rect x="2" y="0" width="196" height="18" rx="5" fill="#7d0b25"/>
+<rect x="0" y="8" width="200" height="112" rx="12" fill="url(#gbB)"/>
+<g fill="#fff" opacity=".2"><circle cx="24" cy="40" r="4"/><circle cx="58" cy="78" r="5"/><circle cx="30" cy="102" r="3"/><circle cx="150" cy="36" r="3"/><circle cx="174" cy="70" r="5"/><circle cx="140" cy="100" r="4"/><circle cx="62" cy="30" r="2.5"/></g>
+<rect x="0" y="8" width="200" height="12" fill="#000" opacity=".14"/>
+<rect x="86" y="8" width="28" height="112" fill="url(#gbR)"/><rect x="88" y="8" width="6" height="112" fill="#fff" opacity=".3"/></svg>`;
+const GIFT_LID = `<svg class="glid" viewBox="0 0 220 100" aria-hidden="true">
+<path d="M110 58C92 20 50 16 56 46c3 14 32 17 54 12z" fill="url(#gbR)"/><path d="M110 58C128 20 170 16 164 46c-3 14-32 17-54 12z" fill="url(#gbR)"/>
+<path d="M105 53C92 32 70 29 68 43M115 53c13-21 35-24 37-10" fill="none" stroke="#d99000" stroke-width="3" stroke-linecap="round"/>
+<rect x="4" y="56" width="212" height="40" rx="10" fill="url(#gbL)"/><rect x="4" y="84" width="212" height="12" rx="6" fill="#000" opacity=".14"/>
+<g fill="#fff" opacity=".22"><circle cx="30" cy="70" r="3.5"/><circle cx="62" cy="82" r="2.5"/><circle cx="176" cy="72" r="3.5"/><circle cx="196" cy="84" r="2.5"/></g>
+<rect x="96" y="56" width="28" height="40" fill="url(#gbR)"/>
+<path d="M104 62l-18 30 11-3 6 9 9-34zM116 62l18 30-11-3-6 9-9-34z" fill="#f2ad00"/>
+<ellipse cx="110" cy="58" rx="13" ry="11" fill="#ffd45c"/><ellipse cx="106" cy="54" rx="4.5" ry="3" fill="#fff" opacity=".55"/></svg>`;
+const SPARKS = [[4, 40, 0], [88, 34, .5], [12, 66, 1], [92, 62, .8]]   // по краям, чтобы не попасть на имя
+  .map(([x, y, d]) => `<span class="spark" style="left:${x}%;top:${y}%;animation-delay:${d}s" aria-hidden="true">✦</span>`).join('');
+
 function viewReveal() {
   const v = state.view, i = v.info;
   const rows = [[t.org, i.org], [t.budget, i.budget], [t.date, i.date ? fmtDate(i.date) : ''], [t.codeLbl, i.code]].filter(r => r[1]);
-  const fs = Math.max(26, Math.min(68, Math.floor(480 / Math.max(1, Array.from(i.to).length))));
+  const fs = Math.max(24, Math.min(56, Math.floor(400 / Math.max(1, Array.from(i.to).length))));
   return `
   <div class="wrap reveal">
     ${v.back && !inTG ? `<button class="backlink" data-act="back">‹ ${esc(t.back)}</button>` : ''}
     <h1 class="c">${esc(i.title)}</h1>
-    <div class="stage">
-      <div class="tag${v.open ? ' open' : ''}" data-act="flip" role="button" tabindex="0" aria-pressed="${!!v.open}" aria-label="${esc(t.tagLabel)}">
-        <div class="shw"><div class="shade"></div></div>
-        <div class="face front" aria-hidden="${!!v.open}">
-          <span class="hole"></span>
-          <div class="hand to">${esc(t.hi(i.from))}</div>
-          <p>${esc(t.tapTag)}</p>
+    <div class="gstage${v.open ? ' open' : ''}">
+      <div class="unbox"${v.open ? '' : ` role="button" tabindex="0" aria-label="${esc(t.openGift)}"`}>
+        <div class="rays"></div><div class="glow"></div><div class="gshadow"></div>
+        <div class="gtag${v.hid ? ' hid' : ''}" data-act="hideName" role="button" tabindex="${v.open ? 0 : -1}" aria-hidden="${!v.open}" aria-label="${esc(t.tagLabel)}">
+          <div class="shw"><div class="shade"></div></div>
+          <div class="face">
+            <span class="hole"></span>
+            <p>${esc(t.youGive)}</p>
+            <div class="hand name" style="font-size:${fs}px">${esc(i.to)}</div>
+            <p class="name-hint">${esc(v.hid ? t.showName : t.secret)}</p>
+          </div>
         </div>
-        <div class="face back" aria-hidden="${!v.open}">
-          <span class="hole"></span>
-          <p class="small">${esc(t.youGive)}</p>
-          <div class="hand name" style="font-size:${fs}px">${esc(i.to)}</div>
-          <p class="small">${esc(t.secret)}</p>
-        </div>
-        <svg class="string" viewBox="0 0 20 104" aria-hidden="true"><line x1="10" y1="0" x2="10" y2="100" stroke="#ffc83d" stroke-width="2.5" stroke-linecap="round"/><circle cx="10" cy="100" r="3.5" fill="#ffc83d"/></svg>
+        <div class="gbox">${GIFT_BODY}${GIFT_LID}</div>
+        <span class="reveal-santa">${santa(96)}</span>
+        ${ART.gift('#7c5cff', '#9b82ff', '#4fc3ff', 'side')}
+        ${SPARKS}
+        <div class="gift-hi"><div class="hand">${esc(t.hi(i.from))}</div><p>${esc(t.giftIn)}</p></div>
       </div>
+      <div class="hold" aria-hidden="true"><span>👆 ${esc(t.holdHint)}</span><span class="hold-bar"><i></i></span></div>
     </div>
-    <div class="stage-foot"><span class="reveal-santa">${santa(96)}</span>${pile(3)}</div>
     ${rows.length ? `<div class="sect" style="margin-top:14px">${rows.map(r => `<div class="row kv"><span class="lbl">${esc(r[0])}</span><span class="val">${r[0] === t.codeLbl ? `<span class="code">${esc(r[1])}</span>` : esc(r[1])}</span></div>`).join('')}</div>` : ''}
     <p class="secret">${esc(t.secretNote)}</p>
     <div class="c" style="margin-top:12px">${langBtn()}</div>
@@ -1199,6 +1257,43 @@ function moveCal(dir) {
   const nav = $(`.cal-nav[data-d="${dir}"]`, sh); if (nav && !nav.disabled) nav.focus({ preventScroll: true });
 }
 
+/* Подарок открывается, если держать на нём палец HOLD_MS. Отпустили раньше — прогресс плавно сползает назад.
+   Вибрация чаще и сильнее по мере того, как коробка «готова лопнуть». */
+const HOLD_MS = 1300;
+let hold = null;   // { p, down, last, buzz }
+function holdStep(ts) {
+  const g = $('.gstage');
+  if (!g || !hold) { hold = null; return; }
+  const dt = Math.min(250, ts - (hold.last || ts)); hold.last = ts;   // по часам, а не по кадрам: на медленном телефоне тоже ~1,3 с
+  hold.p = Math.min(1, Math.max(0, hold.p + (hold.down ? dt / HOLD_MS : -dt / 500)));
+  g.style.setProperty('--p', hold.p.toFixed(3));
+  if (hold.down && ts - hold.buzz > 200 - hold.p * 130) { hold.buzz = ts; hap.tap(hold.p > .66 ? 'heavy' : hold.p > .33 ? 'medium' : 'light'); }
+  if (hold.p >= 1) { hold = null; openGift(); return; }
+  if (!hold.down && hold.p <= 0) { hold = null; return; }
+  requestAnimationFrame(holdStep);
+}
+function holdStart() {
+  const g = $('.gstage'); if (!g || g.classList.contains('open')) return;
+  g.classList.add('holding');
+  if (hold) hold.down = true;
+  else { hold = { p: 0, down: true, last: 0, buzz: 0 }; requestAnimationFrame(holdStep); }
+}
+function holdEnd() {
+  if (hold) hold.down = false;
+  const g = $('.gstage'); if (g) g.classList.remove('holding');
+}
+function openGift() {
+  const g = $('.gstage'), v = state.view; if (!g || !v || v.open) return;
+  hold = null; v.open = true; v.seen = true;
+  g.classList.remove('holding'); g.classList.add('open', 'anim'); g.style.setProperty('--p', '1');
+  const u = $('.unbox', g); ['role', 'tabindex', 'aria-label'].forEach(a => u.removeAttribute(a));
+  const tag = $('.gtag', g); tag.setAttribute('aria-hidden', 'false'); tag.tabIndex = 0;
+  hap.ok();
+  const r = $('.gbox', g).getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top, 120);
+  const rs = $('.reveal-santa', g); if (rs) rs.innerHTML = santa(96, 'jump', 'once');
+  const c = $('.cta'); if (c) c.classList.add('on');
+}
+
 const othersAllSent = d => d.items.some((_, i) => i !== d.me) && d.items.every((x, i) => i === d.me || x.sent);
 function setSent(i, v) {
   const d = state.draw, before = othersAllSent(d);
@@ -1299,20 +1394,10 @@ const actions = {
     if (!state.tourSeen) { state.tourSeen = true; saveJSON('tour', 1); }
     render();
   },
-  flip() {
-    const tag = $('.tag'); if (!tag) return;
-    const open = !tag.classList.contains('open');
-    tag.classList.toggle('open', open); tag.setAttribute('aria-pressed', String(open));
-    $('.front', tag).setAttribute('aria-hidden', String(open)); $('.back', tag).setAttribute('aria-hidden', String(!open));
-    state.view.open = open;
-    if (open) {
-      const first = !state.view.seen;
-      state.view.seen = true; const c = $('.cta'); if (c) c.classList.add('on'); hap.ok();
-      if (first) {
-        const r = tag.getBoundingClientRect(); fx.burst(r.left + r.width / 2, r.top + r.height * .45, 80);
-        const rs = $('.reveal-santa'); if (rs) rs.innerHTML = santa(96, 'jump', 'once');
-      }
-    } else hap.tap();
+  hideName() {   // если кто-то заглядывает в телефон, имя можно размыть
+    const v = state.view, tag = $('.gtag'); if (!v || !v.open || !tag) return;
+    v.hid = !v.hid; tag.classList.toggle('hid', v.hid);
+    $('.name-hint', tag).textContent = v.hid ? t.showName : t.secret; hap.tap();
   },
   own() {
     state.screen = state.draw ? 'result' : 'setup';
@@ -1354,7 +1439,8 @@ app.addEventListener('click', e => {
 });
 app.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.id === 'newName') { e.preventDefault(); actions.add(); }
-  else if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('tag')) { e.preventDefault(); actions.flip(); }
+  else if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('unbox')) { e.preventDefault(); openGift(); }
+  else if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('gtag')) { e.preventDefault(); actions.hideName(); }
 });
 document.addEventListener('keydown', e => {
   if (state.tour) {
@@ -1369,6 +1455,13 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowRight') actions.introNext();
   else if (e.key === 'ArrowLeft') actions.introPrev();
 });
+app.addEventListener('pointerdown', e => {
+  if (e.button > 0 || !e.target.closest('.gstage:not(.open) .unbox')) return;
+  e.preventDefault(); holdStart();   // без выделения текста и меню долгого нажатия
+});
+document.addEventListener('pointerup', holdEnd);
+document.addEventListener('pointercancel', holdEnd);
+app.addEventListener('contextmenu', e => { if (e.target.closest('.unbox')) e.preventDefault(); });
 addEventListener('resize', () => { if (state.tour) placeTour(); });   // поворот экрана, разворачивание Telegram
 let swipe = null;   // листание пальцем: слайды обучения и месяцы календаря
 app.addEventListener('touchstart', e => {
