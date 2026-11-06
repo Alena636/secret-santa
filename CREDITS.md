@@ -26,6 +26,21 @@
 
 - Автор: Impallari Type. Лицензия: SIL Open Font License 1.1. Вшит в `index.html`.
 
+## Шрифты Comfortaa и Rubik Mono One
+
+- **Comfortaa** — автор Johan Aakerlund. Основной текст приложения.
+- **Rubik Mono One** — авторы Hubert & Fischer. Подписи разделов и кнопки.
+- Лицензия обоих: **SIL Open Font License 1.1**. Можно бесплатно использовать в любых проектах, в том числе коммерческих, и встраивать в страницу. Продавать сами шрифты отдельно нельзя.
+- Источник: Google Fonts (https://fonts.google.com/specimen/Comfortaa, https://fonts.google.com/specimen/Rubik+Mono+One). Скачаны 6 ноября 2026.
+- Взяты только наборы символов «кириллица» и «латиница» в формате WOFF2. Файлы не менялись, они вшиты в `index.html` в base64.
+
+| Набор | Байт | SHA-256 |
+|---|---|---|
+| Comfortaa, кириллица (переменная насыщенность 300–700) | 18 448 | `a0fee7d935b77461c002a314cfa398f1d32bf5aedb98063884239400e4663eaf` |
+| Comfortaa, латиница | 30 872 | `408f20ae9895ceefa460a383d76497a91abc469e3d00b49f080efc7f4b12c60e` |
+| Rubik Mono One, кириллица | 6 156 | `84d22c91c134519324b93a76e646905df09bcee123163f06fe79ccd07bf44b23` |
+| Rubik Mono One, латиница | 12 752 | `4c1f9c2e5e3f867641f60becebfc11cd0e6ab02aa96bac88d750e37de8fce3c4` |
+
 ## Остальная графика
 
 Подарки, большой подарок с крышкой, открытка, мешок, ёлка, гирлянда, снег и конфетти нарисованы кодом прямо в `index.html` для этого проекта.
